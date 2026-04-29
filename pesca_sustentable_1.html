@@ -116,14 +116,40 @@
   #bottom-panel{position:absolute;bottom:0;left:0;right:0;z-index:50;pointer-events:none;}
   #bottom-panel.hidden{display:none;}
   .action-bar{
-    display:flex;justify-content:center;align-items:stretch;
-    gap:3px;padding:4px 5px;
+    display:flex;justify-content:flex-start;align-items:flex-start;gap:6px;
+    padding:6px 8px;
     background:var(--ui-bg);border-top:2px solid var(--ui-border);
-    flex-wrap:nowrap;overflow-x:auto;
+    flex-wrap:wrap;overflow-x:auto;
     scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
+    flex-direction:row;
   }
   .action-bar::-webkit-scrollbar{display:none;}
+
+  /* Button Group Container */
+  .action-group{
+    display:flex;flex-direction:column;gap:2px;
+    background:rgba(13,34,64,0.6);
+    border:2px solid var(--ui-border);
+    padding:4px;
+    border-radius:2px;
+    flex-shrink:0;
+  }
+  .action-group-label{
+    font-family:var(--font-pixel);
+    font-size:clamp(3px,0.8vw,5px);
+    color:var(--gold);
+    text-align:center;
+    padding:1px 3px;
+    border-bottom:1px solid var(--ui-border);
+    margin-bottom:2px;
+    letter-spacing:0.5px;
+    opacity:0.85;
+  }
+  .action-group-buttons{
+    display:flex;flex-direction:row;gap:2px;flex-wrap:wrap;
+  }
+
   .action-btn{
     font-family:var(--font-pixel);
     font-size:clamp(4px,1.1vw,7.5px);
@@ -135,7 +161,7 @@
     white-space:nowrap;flex-shrink:0;
     -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
-    min-height:38px;
+    min-height:32px;
     display:flex;align-items:center;justify-content:center;
   }
   .action-btn:active,.action-btn:hover{background:var(--ocean-surf);border-color:var(--wave);}
@@ -211,6 +237,10 @@
   /* ── FISH SELECTION MODAL ── */
   #fish-select-overlay{position:absolute;inset:0;background:rgba(5,12,24,.92);z-index:210;display:none;align-items:center;justify-content:center;}
   #fish-select-overlay.show{display:flex;}
+
+  /* ── METHOD SELECTION MODAL ── */
+  #method-select-overlay{position:absolute;inset:0;background:rgba(5,12,24,.92);z-index:210;display:none;align-items:center;justify-content:center;}
+  #method-select-overlay.show{display:flex;}
   .fish-select-box{
     background:var(--ocean-deep);border:3px solid var(--gold);
     padding:14px 16px;
@@ -231,6 +261,31 @@
   .fish-select-btn:hover{background:var(--green);}
   .fish-select-close{position:absolute;top:8px;right:10px;font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);background:transparent;border:2px solid var(--red);color:var(--red);cursor:pointer;padding:4px 10px;}
   .fish-select-close:hover{background:var(--red);color:#fff;}
+
+  /* ── METHOD SELECT MODAL ── */
+  .method-select-box{
+    background:var(--ocean-deep);border:3px solid var(--sand);
+    padding:14px 16px;
+    max-width:min(540px,92vw);width:100%;
+    max-height:88vh;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:#f0d080 #0d2240;
+  }
+  .method-select-title{font-size:clamp(7px,1.5vw,11px);color:var(--sand);margin-bottom:12px;text-align:center;border-bottom:2px solid var(--sand);padding-bottom:8px;}
+  .method-option{display:flex;align-items:stretch;gap:10px;background:var(--ocean-mid);border:2px solid var(--ocean-surf);padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+  .method-option:hover,.method-option.selected{border-color:var(--sand);background:#0d3a50;}
+  .method-option.selected{border-color:var(--sand);background:#0d4a60;box-shadow:0 0 8px rgba(240,208,128,0.3);}
+  .method-option-icon{width:48px;height:36px;flex-shrink:0;border-radius:3px;background:var(--ocean-surf);border:1px solid var(--ui-border);display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2vw,16px);}
+  .method-option-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;}
+  .method-option-name{font-family:var(--font-pixel);font-size:clamp(5px,1.1vw,8px);color:var(--wave);margin-bottom:4px;}
+  .method-option-desc{font-family:var(--font-vt);font-size:clamp(9px,1.3vw,12px);color:var(--sand);margin-bottom:4px;line-height:1.3;}
+  .method-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:var(--font-vt);font-size:clamp(8px,1vw,11px);}
+  .method-stat{display:flex;justify-content:space-between;align-items:center;}
+  .method-stat-label{color:var(--gold);font-size:clamp(7px,.9vw,10px);}
+  .method-stat-value{color:var(--wave);font-weight:bold;}
+  .method-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
+  .method-select-btn:hover{background:var(--green);}
+  .method-select-close{position:absolute;top:8px;right:10px;font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);background:transparent;border:2px solid var(--red);color:var(--red);cursor:pointer;padding:4px 10px;}
+  .method-select-close:hover{background:var(--red);color:#fff;}
 
   /* ── CATCH POPUP ── */
   #catch-popup{
@@ -302,6 +357,17 @@
   .zone-species-chip{display:inline-block;font-family:var(--font-vt);font-size:clamp(12px,1.7vw,15px);color:var(--wave);background:var(--ocean-mid);border:1px solid var(--ocean-surf);padding:2px 8px;margin:2px;}
   .zone-enter-btn{font-family:var(--font-pixel);font-size:clamp(6px,1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
   .zone-enter-btn:hover{background:var(--green);}
+
+  /* ── TARGET SPECIES SELECTION ── */
+  #zm-target-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--ui-border);}
+  .zm-target-title{font-family:var(--font-pixel);font-size:clamp(6px,1vw,8px);color:var(--gold);margin-bottom:8px;}
+  .zm-species-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;}
+  .zm-species-option{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--ocean-mid);border:2px solid var(--ocean-surf);border-radius:3px;cursor:pointer;transition:all .15s;}
+  .zm-species-option:hover{background:var(--ocean-surf);border-color:var(--wave);}
+  .zm-species-option input[type="checkbox"]{cursor:pointer;accent-color:var(--green);}
+  .zm-species-option label{cursor:pointer;font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--sand);flex:1;margin:0;}
+  .zm-species-option input[type="checkbox"]:checked+label{color:var(--wave);}
+  .zm-equipment-hint{font-family:var(--font-vt);font-size:clamp(10px,1.5vw,12px);color:var(--gold);margin-top:8px;}
 
   /* ── CANTINA INTERIOR ── */
   #cantina-screen{
@@ -393,10 +459,21 @@
     #catch-popup.show { transform: translateX(-50%) scale(1); }
     /* Action bar scrollable in portrait */
     .action-bar {
-      gap: 3px;
-      padding: 3px 4px;
+      gap: 4px;
+      padding: 4px 5px;
       overflow-x: auto;
       justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+    .action-group {
+      padding: 3px;
+    }
+    .action-group-label {
+      font-size: clamp(2.5px, 0.7vw, 4px);
+    }
+    .action-btn {
+      padding: 5px 7px;
+      font-size: clamp(3.5px, 0.9vw, 6px);
     }
     /* Modal wider on portrait */
     .modal-box {
@@ -452,19 +529,26 @@
     .time-display { font-size: clamp(4px, 2vw, 7px); padding: 3px 6px; }
     .time-big { font-size: clamp(9px, 4vw, 14px); }
 
-    /* Action bar: 2 rows, bigger touch targets */
+    /* Action bar: grouped layout for portrait */
     .action-bar {
       flex-wrap: wrap;
-      gap: 2px;
+      gap: 3px;
       padding: 4px;
-      justify-content: space-around;
+      justify-content: flex-start;
+    }
+    .action-group {
+      padding: 3px;
+    }
+    .action-group-label {
+      font-size: clamp(2.5px, 1.8vw, 4px);
+    }
+    .action-group-buttons {
+      gap: 2px;
     }
     .action-btn {
-      font-size: clamp(5px, 2.2vw, 8px);
-      padding: 8px 6px;
-      min-height: 36px;
-      flex: 1 1 calc(20% - 4px);
-      max-width: calc(25% - 4px);
+      font-size: clamp(5px, 1.8vw, 7px);
+      padding: 6px 5px;
+      min-height: 32px;
     }
 
     /* Zone indicator: top right but smaller */
@@ -614,9 +698,16 @@
         <div class="zone-map-title" id="zm-title">MANGLAR</div>
         <div class="zone-map-desc" id="zm-desc">Descripción de zona</div>
         <div class="zone-map-species" id="zm-species"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        
+        <div id="zm-target-section">
+          <div class="zm-target-title">★ SELECCIONA ESPECIES OBJETIVO:</div>
+          <div class="zm-species-checklist" id="zm-checklist"></div>
+          <div class="zm-equipment-hint" id="zm-equipment-hint" style="display:none;"></div>
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;">
           <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--gold)" id="zm-cost"></div>
-          <button class="zone-travel-btn" id="zm-travel-btn">NAVEGAR AQUI</button>
+          <button class="zone-enter-btn" id="zm-travel-btn">NAVEGAR AQUI</button>
         </div>
       </div>
     </div>
@@ -630,6 +721,16 @@
       <div class="fish-select-desc" id="fs-desc">Selecciona el tipo de pez que deseas pescar en esta zona:</div>
       <div id="fish-options-container"></div>
       <button class="fish-select-btn" onclick="confirmFishSelection()">PESCAR AHORA</button>
+    </div>
+  </div>
+
+  <!-- SELECCION DE METODO DE PESCA -->
+  <div id="method-select-overlay">
+    <div class="method-select-box" style="position:relative;">
+      <button class="method-select-close" onclick="closeMethodSelect()">X</button>
+      <div class="method-select-title">ELIGE TU METODO DE PESCA</div>
+      <div id="method-options-container"></div>
+      <button class="method-select-btn" onclick="confirmMethodSelection()">CONFIRMAR METODO</button>
     </div>
   </div>
 
@@ -649,17 +750,51 @@
 
   <div id="bottom-panel" class="hidden">
     <div class="action-bar">
-      <button class="action-btn zone-btn active" id="btn-z-manglar" onclick="openZoneMap('manglar')">MANGLAR</button>
-      <button class="action-btn zone-btn" id="btn-z-arrecife" onclick="openZoneMap('arrecife')">ARRECIFE</button>
-      <button class="action-btn zone-btn" id="btn-z-abierto" onclick="openZoneMap('abierto')">MAR ABIERTO</button>
-      <button class="action-btn" id="btn-fish" onclick="fish()">PESCAR</button>
-      <button class="action-btn" id="btn-method" onclick="changeMethod()">METODO</button>
-      <button class="action-btn" onclick="openMarket()">MERCADO</button>
-      <button class="action-btn" style="border-color:#e0a820;color:#e0a820" onclick="openCantina()">CANTINA</button>
-      <button class="action-btn" style="border-color:#70c050;color:#70c050" onclick="openMissions()">MISIONES</button>
-      <button class="action-btn" onclick="openLogbook()">BITACORA</button>
-      <button class="action-btn" onclick="rest()">DESCANSAR</button>
-      <button class="action-btn save-action" onclick="openSaveLoad('save')">GUARDAR</button>
+      <!-- ZONAS GROUP -->
+      <div class="action-group">
+        <div class="action-group-label">ZONAS</div>
+        <div class="action-group-buttons">
+          <button class="action-btn zone-btn active" id="btn-z-manglar" onclick="openZoneMap('manglar')">MANGLAR</button>
+          <button class="action-btn zone-btn" id="btn-z-arrecife" onclick="openZoneMap('arrecife')">ARRECIFE</button>
+          <button class="action-btn zone-btn" id="btn-z-abierto" onclick="openZoneMap('abierto')">MAR ABIERTO</button>
+        </div>
+      </div>
+
+      <!-- PESCA GROUP -->
+      <div class="action-group">
+        <div class="action-group-label">PESCA</div>
+        <div class="action-group-buttons">
+          <button class="action-btn" id="btn-fish" onclick="fish()">PESCAR</button>
+          <button class="action-btn" id="btn-method" onclick="changeMethod()">METODO</button>
+        </div>
+      </div>
+
+      <!-- COMERCIO GROUP -->
+      <div class="action-group">
+        <div class="action-group-label">COMERCIO</div>
+        <div class="action-group-buttons">
+          <button class="action-btn" onclick="openMarket()">MERCADO</button>
+          <button class="action-btn" style="border-color:#e0a820;color:#e0a820" onclick="openCantina()">CANTINA</button>
+        </div>
+      </div>
+
+      <!-- INFO GROUP -->
+      <div class="action-group">
+        <div class="action-group-label">INFO</div>
+        <div class="action-group-buttons">
+          <button class="action-btn" style="border-color:#70c050;color:#70c050" onclick="openMissions()">MISIONES</button>
+          <button class="action-btn" onclick="openLogbook()">BITACORA</button>
+        </div>
+      </div>
+
+      <!-- ACCIONES GROUP -->
+      <div class="action-group">
+        <div class="action-group-label">ACCIONES</div>
+        <div class="action-group-buttons">
+          <button class="action-btn" onclick="rest()">DESCANSAR</button>
+          <button class="action-btn save-action" onclick="openSaveLoad('save')">GUARDAR</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -805,35 +940,36 @@ const G={
   money:500,fuel:100,energy:100,hunger:100,thirst:100,eco:80,
   caught:0,inventory:[],logbook:{},
   fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0,
+  targetSpecies:[],equipment:['anzuelo'],
 };
 
 // ─── SPECIES ───────────────────────────────────────────────
 const SPECIES={
   manglar:[
-    {name:'Robalo',     color:'#7fc5a8',belly:'#c8f0dc',fin:'#5a9a7a',weight:[.5,2.5],  value:[80,200],  rarity:.5, eco:1, desc:'Pez plateado del manglar. Se esconde entre las raices. Muy apreciado en el mercado local.'},
-    {name:'Mojarra',    color:'#a0c8e0',belly:'#d8f0ff',fin:'#6090b0',weight:[.2,.8],   value:[30,80],   rarity:.6, eco:1, desc:'Pequeno pez azulado muy comun en aguas someras. Vive en cardumenes y es facil de atrapar.'},
-    {name:'Cangrejo',   color:'#e05030',belly:'#f08060',fin:'#c03010',weight:[.1,.5],   value:[50,120],  rarity:.4, eco:1, desc:'Cangre jo rojo que vive entre raices. Sus pinzas son fuertes. Se mueve de lado con astucia.',crab:true},
-    {name:'Camaron',    color:'#f0a880',belly:'#ffd0b0',fin:'#d08060',weight:[.05,.2],  value:[60,150],  rarity:.5, eco:1, desc:'Translucido y rapido. Nada hacia atras cuando se asusta. Muy cotizado en cocina.',shrimp:true},
-    {name:'Trucha',     color:'#8080c0',belly:'#c0c0f0',fin:'#606090',weight:[.3,1.2],  value:[90,180],  rarity:.3, eco:2, desc:'Pez de tonos violaceos con manchas oscuras. Prefiere aguas limpias y frescas del manglar.'},
-    {name:'Bagre',      color:'#888870',belly:'#b8b8a0',fin:'#606050',weight:[.4,1.8],  value:[40,100],  rarity:.5, eco:1, desc:'Pez de fondo con bigotes sensores. Busca alimento en el lodo. Resistente y comun.'},
+    {name:'Robalo',     color:'#7fc5a8',belly:'#c8f0dc',fin:'#5a9a7a',weight:[.5,2.5],  value:[80,200],  rarity:.5, eco:1, equipment:['anzuelo','red'], desc:'Pez plateado del manglar. Se esconde entre las raices. Muy apreciado en el mercado local.'},
+    {name:'Mojarra',    color:'#a0c8e0',belly:'#d8f0ff',fin:'#6090b0',weight:[.2,.8],   value:[30,80],   rarity:.6, eco:1, equipment:['anzuelo','trampa'], desc:'Pequeno pez azulado muy comun en aguas someras. Vive en cardumenes y es facil de atrapar.'},
+    {name:'Cangrejo',   color:'#e05030',belly:'#f08060',fin:'#c03010',weight:[.1,.5],   value:[50,120],  rarity:.4, eco:1, equipment:['trampa','artesanal'], desc:'Cangre jo rojo que vive entre raices. Sus pinzas son fuertes. Se mueve de lado con astucia.',crab:true},
+    {name:'Camaron',    color:'#f0a880',belly:'#ffd0b0',fin:'#d08060',weight:[.05,.2],  value:[60,150],  rarity:.5, eco:1, equipment:['trampa','artesanal'], desc:'Translucido y rapido. Nada hacia atras cuando se asusta. Muy cotizado en cocina.',shrimp:true},
+    {name:'Trucha',     color:'#8080c0',belly:'#c0c0f0',fin:'#606090',weight:[.3,1.2],  value:[90,180],  rarity:.3, eco:2, equipment:['anzuelo','red'], desc:'Pez de tonos violaceos con manchas oscuras. Prefiere aguas limpias y frescas del manglar.'},
+    {name:'Bagre',      color:'#888870',belly:'#b8b8a0',fin:'#606050',weight:[.4,1.8],  value:[40,100],  rarity:.5, eco:1, equipment:['trampa','artesanal'], desc:'Pez de fondo con bigotes sensores. Busca alimento en el lodo. Resistente y comun.'},
   ],
   arrecife:[
-    {name:'Pez Angel',  color:'#e0c020',belly:'#fff090',fin:'#c08000',weight:[.2,.8],   value:[150,350], rarity:.25,eco:2, desc:'Espectacular pez amarillo y negro del arrecife. Pareja de por vida. Simbolo de los arrecifes sanos.'},
-    {name:'Pez Loro',   color:'#40c880',belly:'#a0ffc0',fin:'#208850',weight:[.5,2.0],  value:[100,250], rarity:.3, eco:2, desc:'Pico duro como un pico de loro. Roe el coral para alimentarse y crea arena de playa al digerir.'},
-    {name:'Mero',       color:'#b05028',belly:'#e09060',fin:'#803010',weight:[1,5],     value:[200,500], rarity:.2, eco:3, desc:'Pez solitario y territorial. Se camufla entre las rocas. Puede cambiar de color con la edad.'},
-    {name:'Langosta',   color:'#d04020',belly:'#f08050',fin:'#901010',weight:[.3,1.5],  value:[300,700], rarity:.15,eco:3, desc:'Crustaceo nocturno de gran valor. Se esconde en grietas del arrecife durante el dia.',lobster:true},
-    {name:'Pulpo',      color:'#9040a0',belly:'#c870d0',fin:'#602060',weight:[.5,3.0],  value:[200,450], rarity:.2, eco:2, desc:'Maestro del disfraz. Tiene tres corazones y sangre azul. Muy inteligente para ser un molusco.',octopus:true},
-    {name:'Pez Globo',  color:'#e0e040',belly:'#fffff0',fin:'#a0a000',weight:[.1,.4],   value:[50,120],  rarity:.4, eco:1, desc:'Se infla como una pelota al sentirse amenazado. Contiene tetrodotoxina, un veneno potente.'},
-    {name:'Mantarraya', color:'#404050',belly:'#8080a0',fin:'#202030',weight:[5,20],    value:[0,0],     rarity:.05,eco:5, desc:'Majestuosa raya que planea entre las corrientes. Inofensiva. Liberada para proteger el ecosistema.',release:true},
+    {name:'Pez Angel',  color:'#e0c020',belly:'#fff090',fin:'#c08000',weight:[.2,.8],   value:[150,350], rarity:.25,eco:2, equipment:['anzuelo','red'], desc:'Espectacular pez amarillo y negro del arrecife. Pareja de por vida. Simbolo de los arrecifes sanos.'},
+    {name:'Pez Loro',   color:'#40c880',belly:'#a0ffc0',fin:'#208850',weight:[.5,2.0],  value:[100,250], rarity:.3, eco:2, equipment:['red','anzuelo'], desc:'Pico duro como un pico de loro. Roe el coral para alimentarse y crea arena de playa al digerir.'},
+    {name:'Mero',       color:'#b05028',belly:'#e09060',fin:'#803010',weight:[1,5],     value:[200,500], rarity:.2, eco:3, equipment:['red','industrial'], desc:'Pez solitario y territorial. Se camufla entre las rocas. Puede cambiar de color con la edad.'},
+    {name:'Langosta',   color:'#d04020',belly:'#f08050',fin:'#901010',weight:[.3,1.5],  value:[300,700], rarity:.15,eco:3, equipment:['trampa'], desc:'Crustaceo nocturno de gran valor. Se esconde en grietas del arrecife durante el dia.',lobster:true},
+    {name:'Pulpo',      color:'#9040a0',belly:'#c870d0',fin:'#602060',weight:[.5,3.0],  value:[200,450], rarity:.2, eco:2, equipment:['trampa','red'], desc:'Maestro del disfraz. Tiene tres corazones y sangre azul. Muy inteligente para ser un molusco.',octopus:true},
+    {name:'Pez Globo',  color:'#e0e040',belly:'#fffff0',fin:'#a0a000',weight:[.1,.4],   value:[50,120],  rarity:.4, eco:1, equipment:['anzuelo'], desc:'Se infla como una pelota al sentirse amenazado. Contiene tetrodotoxina, un veneno potente.'},
+    {name:'Mantarraya', color:'#404050',belly:'#8080a0',fin:'#202030',weight:[5,20],    value:[0,0],     rarity:.05,eco:5, equipment:['industrial','red'], desc:'Majestuosa raya que planea entre las corrientes. Inofensiva. Liberada para proteger el ecosistema.',release:true},
   ],
   abierto:[
-    {name:'Atun',       color:'#2060a0',belly:'#80c0e8',fin:'#103060',weight:[5,30],    value:[500,2000],rarity:.2, eco:4, desc:'Nadador veloz de aguas abiertas. Puede alcanzar 70 km/h. Muy valorado en mercados internacionales.'},
-    {name:'Pargo',      color:'#d04040',belly:'#f09090',fin:'#901010',weight:[1,6],     value:[150,400], rarity:.3, eco:2, desc:'Pez rojo de carne firme. Habita fondos rocosos. Muy apreciado en la gastronomia local.'},
-    {name:'Sierra',     color:'#408080',belly:'#80d0d0',fin:'#205050',weight:[2,10],    value:[200,600], rarity:.25,eco:3, desc:'Pez largo y plateado con dientes afilados. Nada en grupos y ataca rapidamente a sus presas.'},
-    {name:'Dorado',     color:'#e0a020',belly:'#ffe080',fin:'#a07000',weight:[3,15],    value:[300,900], rarity:.15,eco:3, desc:'Pez de colores dorados y azules brillantes. Cambia de color al morir. Uno de los mas hermosos del mar.'},
-    {name:'Marlin',     color:'#3050c0',belly:'#90b0f0',fin:'#102080',weight:[50,200],  value:[0,0],     rarity:.03,eco:8, desc:'El gigante del mar abierto. Su pico puede medir un metro. Especie protegida, siempre liberado.',release:true},
-    {name:'Calamar G',  color:'#d080e0',belly:'#f0c0ff',fin:'#902090',weight:[10,50],   value:[400,1000],rarity:.05,eco:4, desc:'Criatura de las profundidades con tentaculos luminiscentes. Aparicion muy poco comun.',rare:true,squid:true},
-    {name:'Ballena J',  color:'#204060',belly:'#608090',fin:'#102030',weight:[0,0],     value:[0,0],     rarity:.005,eco:0, desc:'La ballena jorobada visita estas aguas en migracion. Su canto resuena kilometros. Siempre liberada.',release:true,rare:true},
+    {name:'Atun',       color:'#2060a0',belly:'#80c0e8',fin:'#103060',weight:[5,30],    value:[500,2000],rarity:.2, eco:4, equipment:['red','industrial'], desc:'Nadador veloz de aguas abiertas. Puede alcanzar 70 km/h. Muy valorado en mercados internacionales.'},
+    {name:'Pargo',      color:'#d04040',belly:'#f09090',fin:'#901010',weight:[1,6],     value:[150,400], rarity:.3, eco:2, equipment:['anzuelo','red'], desc:'Pez rojo de carne firme. Habita fondos rocosos. Muy apreciado en la gastronomia local.'},
+    {name:'Sierra',     color:'#408080',belly:'#80d0d0',fin:'#205050',weight:[2,10],    value:[200,600], rarity:.25,eco:3, equipment:['industrial','red'], desc:'Pez largo y plateado con dientes afilados. Nada en grupos y ataca rapidamente a sus presas.'},
+    {name:'Dorado',     color:'#e0a020',belly:'#ffe080',fin:'#a07000',weight:[3,15],    value:[300,900], rarity:.15,eco:3, equipment:['industrial','red'], desc:'Pez de colores dorados y azules brillantes. Cambia de color al morir. Uno de los mas hermosos del mar.'},
+    {name:'Marlin',     color:'#3050c0',belly:'#90b0f0',fin:'#102080',weight:[50,200],  value:[0,0],     rarity:.03,eco:8, equipment:['industrial','red'], desc:'El gigante del mar abierto. Su pico puede medir un metro. Especie protegida, siempre liberado.',release:true},
+    {name:'Calamar G',  color:'#d080e0',belly:'#f0c0ff',fin:'#902090',weight:[10,50],   value:[400,1000],rarity:.05,eco:4, equipment:['industrial','trampa'], desc:'Criatura de las profundidades con tentaculos luminiscentes. Aparicion muy poco comun.',rare:true,squid:true},
+    {name:'Ballena J',  color:'#204060',belly:'#608090',fin:'#102030',weight:[0,0],     value:[0,0],     rarity:.005,eco:0, equipment:['industrial','red'], desc:'La ballena jorobada visita estas aguas en migracion. Su canto resuena kilometros. Siempre liberada.',release:true,rare:true},
   ]
 };
 
@@ -2534,11 +2670,11 @@ function animTitle(){
 function startGame(saved=null){
   if(saved){
     Object.assign(G,saved);
-    G.fishing=false; G.fishTimer=null; G.tickTimer=null; G.storm=false; G.stormTimer=null; G.ticks=0; G.xp=saved.xp||0; G.activeMissions=saved.activeMissions||[]; G.completedMissions=saved.completedMissions||[]; G._dayStartMoney=saved._dayStartMoney||G.money; G._dayStartCaught=saved._dayStartCaught||G.caught;
+    G.fishing=false; G.fishTimer=null; G.tickTimer=null; G.storm=false; G.stormTimer=null; G.ticks=0; G.xp=saved.xp||0; G.activeMissions=saved.activeMissions||[]; G.completedMissions=saved.completedMissions||[]; G._dayStartMoney=saved._dayStartMoney||G.money; G._dayStartCaught=saved._dayStartCaught||G.caught; G.targetSpecies=saved.targetSpecies||[]; G.equipment=saved.equipment||['anzuelo'];
   } else {
     Object.assign(G,{running:false,day:1,hour:6,minute:0,season:0,weather:'sunny',temp:24,zone:'manglar',
       method:'anzuelo',methodIdx:0,money:500,fuel:100,energy:100,hunger:100,thirst:100,eco:80,
-      caught:0,xp:0,activeMissions:[],completedMissions:[],inventory:[],logbook:{},_dayStartMoney:500,_dayStartCaught:0,fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0});
+      caught:0,xp:0,targetSpecies:[],equipment:['anzuelo'],activeMissions:[],completedMissions:[],inventory:[],logbook:{},_dayStartMoney:500,_dayStartCaught:0,fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0});
   }
   document.getElementById('title-screen').classList.add('hidden');
   ['hud','bottom-panel','message-log','zone-indicator'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
@@ -2637,12 +2773,87 @@ function changeZone(z){
 }
 function updateZoneUI(){const zi=ZONE_INFO[G.zone];document.getElementById('zone-name').textContent=zi.name;document.getElementById('zone-species').textContent=zi.species;}
 
+let _selectedMethodType=null;
+
 function changeMethod(){
-  G.methodIdx=(G.methodIdx+1)%G.methods.length; G.method=G.methods[G.methodIdx];
+  openMethodSelect();
+}
+
+function openMethodSelect(){
+  const container=document.getElementById('method-options-container');
+  container.innerHTML='';
+
+  const methods=['anzuelo','red','trampa','artesanal','industrial'];
+  const emojis={'anzuelo':'🎣','red':'🥅','trampa':'🪤','artesanal':'🚣','industrial':'⚙️'};
+  const descs={
+    'anzuelo':'Metodo clasico y preciso. Bajo impacto ambiental.',
+    'red':'Versátil y eficiente. Moderado impacto ecologico.',
+    'trampa':'Metodo selectivo. Bueno para crustaceos.',
+    'artesanal':'Sostenible y responsable. Minimo impacto.',
+    'industrial':'Rapido pero contaminante. Alto impacto ambiental.'
+  };
+
+  methods.forEach(m=>{
+    const mi=METHOD_INFO[m];
+    const isSelected=G.method===m;
+    const zoneBonus=Object.keys(mi.bonus).length>0?Object.keys(mi.bonus)[0]:'-';
+    const bonusVal=mi.bonus[zoneBonus]?'x'+mi.bonus[zoneBonus]:'N/A';
+
+    const opt=document.createElement('div');
+    opt.className='method-option'+(isSelected?' selected':'');
+    opt.onclick=()=>selectMethodType(m,opt);
+
+    opt.innerHTML=`
+      <div class="method-option-icon">${emojis[m]}</div>
+      <div class="method-option-info">
+        <div class="method-option-name">${mi.label.toUpperCase()}</div>
+        <div class="method-option-desc">${descs[m]}</div>
+        <div class="method-stats">
+          <div class="method-stat">
+            <span class="method-stat-label">Tiempo:</span>
+            <span class="method-stat-value">${mi.time/1000}s</span>
+          </div>
+          <div class="method-stat">
+            <span class="method-stat-label">ECO:</span>
+            <span class="method-stat-value">${mi.eco.toFixed(1)}</span>
+          </div>
+          <div class="method-stat">
+            <span class="method-stat-label">Zona Bonus:</span>
+            <span class="method-stat-value">${bonusVal}</span>
+          </div>
+          <div class="method-stat">
+            <span class="method-stat-label">Fallo:</span>
+            <span class="method-stat-value">${(mi.miss*100).toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(opt);
+  });
+
+  document.getElementById('method-select-overlay').classList.add('show');
+}
+
+function selectMethodType(m,el){
+  _selectedMethodType=m;
+  document.querySelectorAll('.method-option').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function closeMethodSelect(){
+  document.getElementById('method-select-overlay').classList.remove('show');
+  _selectedMethodType=null;
+}
+
+function confirmMethodSelection(){
+  if(!_selectedMethodType) return;
+  G.method=_selectedMethodType;
+  G.methodIdx=G.methods.indexOf(_selectedMethodType);
   const mi=METHOD_INFO[G.method];
-  document.getElementById('btn-fish').textContent=mi.label+' - PESCAR';
   document.getElementById('btn-method').textContent=mi.label;
-  logMsg('Metodo: '+mi.label+(mi.eco>2?' (alto ECO)':''),'');
+  document.getElementById('btn-fish').textContent=mi.label+' - PESCAR';
+  logMsg('Metodo: '+mi.label+(mi.eco>2?' (alto ECO)':''+(mi.eco<1?' (bajo ECO)':'')),'');
+  closeMethodSelect();
 }
 
 // ─── SELECCION DE TIPO DE PEZ ───────────────────────────────
@@ -2654,22 +2865,39 @@ function openFishSelect(){
   container.innerHTML='';
   _selectedFishType=null;
   
-  // Agregar opción de cualquier pez (aleatorio)
-  const anyOption=document.createElement('div');
-  anyOption.className='fish-option';
-  anyOption.onclick=()=>selectFishType(null,anyOption);
-  anyOption.innerHTML=`
-    <canvas class="fish-option-icon" width="32" height="24"></canvas>
-    <div class="fish-option-info">
-      <div class="fish-option-name" style="color:var(--gold)">★ CUALQUIER PEZ</div>
-      <div class="fish-option-details">Azar según probabilidad</div>
-      <div class="fish-option-value">Sin bonus</div>
-    </div>
-  `;
-  container.appendChild(anyOption);
+  // Filtrar por especies objetivo si existen
+  let displayPool=pool;
+  if(G.targetSpecies.length>0){
+    displayPool=pool.filter(sp=>G.targetSpecies.includes(sp.name));
+  }
+  
+  // Agregar opción de cualquier pez (aleatorio) - solo si no hay objetivos
+  if(G.targetSpecies.length===0){
+    const anyOption=document.createElement('div');
+    anyOption.className='fish-option';
+    anyOption.onclick=()=>selectFishType(null,anyOption);
+    anyOption.innerHTML=`
+      <canvas class="fish-option-icon" width="32" height="24"></canvas>
+      <div class="fish-option-info">
+        <div class="fish-option-name" style="color:var(--gold)">★ CUALQUIER PEZ</div>
+        <div class="fish-option-details">Azar según probabilidad</div>
+        <div class="fish-option-value">Sin bonus</div>
+      </div>
+    `;
+    container.appendChild(anyOption);
+  } else {
+    // Mostrar que se filtran por objetivos
+    const header=document.createElement('div');
+    header.style.fontFamily='var(--font-vt)';
+    header.style.fontSize='clamp(11px,1.6vw,14px)';
+    header.style.color='var(--gold)';
+    header.style.marginBottom='8px';
+    header.textContent='★ ESPECIES OBJETIVO ('+displayPool.length+'):';
+    container.appendChild(header);
+  }
   
   // Agregar opciones de cada especie
-  pool.forEach((sp,idx)=>{
+  displayPool.forEach((sp,idx)=>{
     const opt=document.createElement('div');
     opt.className='fish-option';
     opt.onclick=()=>selectFishType(sp,opt);
@@ -2683,13 +2911,14 @@ function openFishSelect(){
     const minVal=sp.value[0]||0;
     const maxVal=sp.value[1]||0;
     const valStr=minVal>0?`$${minVal}-${maxVal}`:'Liberado';
+    const equipStr=sp.equipment?sp.equipment.join(', '):'Cualquier equipo';
     
     opt.innerHTML=`
       <canvas class="fish-option-icon" width="32" height="24"></canvas>
       <div class="fish-option-info">
         <div class="fish-option-name">${sp.name}${sp.rare?' ★':''}</div>
         <div class="fish-option-details">${sp.desc?sp.desc.substring(0,40)+'...':''}</div>
-        <div class="fish-option-value">Valor: ${valStr}</div>
+        <div class="fish-option-value">Valor: ${valStr} | Equipo: ${equipStr}</div>
       </div>
     `;
     container.appendChild(opt);
@@ -2720,6 +2949,24 @@ function startFishingWithType(preferredFish){
   if(G.storm){logMsg('No puedes pescar en la tormenta.','danger');return;}
   if(G.energy<5){logMsg('Sin energia.','danger');return;}
   if(G.inventory.length>=20){logMsg('Inventario lleno.','warn');return;}
+  
+  // Validar especies objetivo si existen
+  if(G.targetSpecies.length>0 && preferredFish){
+    if(!G.targetSpecies.includes(preferredFish.name)){
+      logMsg('Esta especie NO es objetivo. Selecciona un objetivo valido.','warn');
+      return;
+    }
+    // Validar equipo
+    if(preferredFish.equipment && !preferredFish.equipment.includes(G.method)){
+      const equipStr=preferredFish.equipment.join(' o ');
+      logMsg(`Equipo invalido. ${preferredFish.name} requiere: ${equipStr}`,'danger');
+      return;
+    }
+  } else if(G.targetSpecies.length>0 && !preferredFish){
+    // Si hay objetivos pero se intenta capturar cualquier pez
+    logMsg('Debes seleccionar una de tus especies objetivo.','warn');
+    return;
+  }
   
   const mt=METHOD_INFO[G.method];
   G.fishing=true;
@@ -3217,6 +3464,23 @@ function openZoneMap(zone){
   const specEl=document.getElementById('zm-species');
   specEl.innerHTML=zd.species.map(s=>`<span class="zone-species-chip">${s}</span>`).join('');
   document.getElementById('zm-cost').textContent='Combustible: '+zd.fuelCost+'% | Riesgo: '+zd.riskLevel;
+  
+  // Generar checkboxes de especies objetivo
+  const checklistEl=document.getElementById('zm-checklist');
+  checklistEl.innerHTML='';
+  const pool=SPECIES[zone]||[];
+  pool.forEach((sp,idx)=>{
+    const isSelected=G.targetSpecies.includes(sp.name);
+    const equipStr=sp.equipment?sp.equipment.join(', '):'Cualquier equipo';
+    const checkDiv=document.createElement('div');
+    checkDiv.className='zm-species-option';
+    checkDiv.innerHTML=`
+      <input type="checkbox" id="zmsp_${idx}" ${isSelected?'checked':''} onchange="toggleTargetSpecies('${sp.name}')">
+      <label for="zmsp_${idx}">${sp.name}</label>
+    `;
+    checklistEl.appendChild(checkDiv);
+  });
+  
   const tBtn=document.getElementById('zm-travel-btn');
   if(zone===G.zone){
     tBtn.textContent='ZONA ACTUAL';
@@ -3233,6 +3497,41 @@ function openZoneMap(zone){
 
 function closeZoneMap(){
   document.getElementById('zone-map-overlay').classList.remove('show');
+}
+
+function toggleTargetSpecies(speciesName){
+  const idx=G.targetSpecies.indexOf(speciesName);
+  if(idx>=0){
+    G.targetSpecies.splice(idx,1);
+  } else {
+    G.targetSpecies.push(speciesName);
+  }
+  updateEquipmentHint();
+}
+
+function updateEquipmentHint(){
+  const hintEl=document.getElementById('zm-equipment-hint');
+  if(G.targetSpecies.length===0){
+    hintEl.style.display='none';
+    return;
+  }
+  
+  const zone=_currentZoneMap;
+  const pool=SPECIES[zone]||[];
+  const targetSp=pool.filter(sp=>G.targetSpecies.includes(sp.name));
+  
+  // Buscar equipo común
+  const allEquipment=new Set();
+  targetSp.forEach(sp=>{
+    if(sp.equipment) sp.equipment.forEach(eq=>allEquipment.add(eq));
+  });
+  
+  if(allEquipment.size>0){
+    hintEl.textContent='Equipos recomendados: '+Array.from(allEquipment).join(', ');
+    hintEl.style.display='block';
+  } else {
+    hintEl.style.display='none';
+  }
 }
 
 function drawZoneMapCanvas(zone,zd){
@@ -3887,6 +4186,8 @@ function getState(){
     money:G.money||0, fuel:G.fuel||100, energy:G.energy||100,
     hunger:G.hunger||100, thirst:G.thirst||100, eco:G.eco||80,
     caught:G.caught||0, xp:G.xp||0,
+    targetSpecies:G.targetSpecies||[],
+    equipment:G.equipment||['anzuelo'],
     _dayStartMoney:G._dayStartMoney||G.money||0,
     _dayStartCaught:G._dayStartCaught||G.caught||0,
     activeMissions:safeMissions,
