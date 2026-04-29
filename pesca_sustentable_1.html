@@ -1,0 +1,3982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mar Vivo – Simulador de Pesca Sustentable</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+  :root{
+    --ocean-deep:#0a1628;--ocean-mid:#0d2240;--ocean-surf:#1a4a6b;
+    --wave:#5dade2;--sand:#f0d080;--sand-dark:#c8a84b;
+    --green:#27ae60;--green-dark:#1e8449;--red:#e74c3c;--gold:#f1c40f;
+    --white:#ecf0f1;--ui-bg:rgba(8,18,35,0.96);--ui-border:#2980b9;
+    --font-pixel:'Press Start 2P',monospace;--font-vt:'VT323',monospace;
+    --hud-h:56px;--bar-h:58px;
+  }
+
+  /* ── FORCE LANDSCAPE ── */
+  html,body{
+    width:100%;height:100%;
+    overflow:hidden;
+    touch-action:none;
+    -webkit-text-size-adjust:none;
+    user-select:none;
+  }
+  body{
+    background:var(--ocean-deep);
+    font-family:var(--font-pixel);
+    color:var(--white);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated;}
+
+  /* portrait supported */
+
+  #game-container{
+    width:100vw;height:100vh;
+    position:relative;overflow:hidden;
+  }
+  #gameCanvas{
+    display:block;position:absolute;
+    top:0;left:0;width:100%;height:100%;
+  }
+
+  /* ── SCREENS ── */
+  .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:100;}
+  .screen.hidden{display:none;}
+  #title-screen{background:radial-gradient(ellipse at 50% 55%,#0d3a5c 0%,#050f1a 100%);}
+  #title-screen canvas{position:absolute;inset:0;width:100%;height:100%;}
+
+  .game-title{
+    font-size:clamp(14px,4vw,34px);
+    color:var(--wave);
+    text-shadow:3px 3px 0 #0a3a5c,0 0 40px #5dade260;
+    letter-spacing:3px;text-align:center;z-index:1;
+    animation:titlePulse 3s ease-in-out infinite;
+  }
+  .game-subtitle{font-size:clamp(5px,1.4vw,10px);color:var(--sand);margin-top:8px;z-index:1;letter-spacing:1px;opacity:.85;}
+  @keyframes titlePulse{0%,100%{text-shadow:3px 3px 0 #0a3a5c,0 0 20px #5dade230;}50%{text-shadow:3px 3px 0 #0a3a5c,0 0 60px #5dade2aa;}}
+
+  .menu-btn{
+    font-family:var(--font-pixel);
+    font-size:clamp(6px,1.5vw,11px);
+    padding:10px 20px;margin:4px;
+    background:transparent;border:3px solid var(--wave);
+    color:var(--wave);cursor:pointer;transition:all .1s;
+    letter-spacing:1px;z-index:1;position:relative;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .menu-btn:hover,.menu-btn:active{background:var(--wave);color:var(--ocean-deep);transform:translate(-2px,-2px);box-shadow:3px 3px 0 #0a3a5c;}
+  .menu-btn.save-btn{border-color:var(--gold);color:var(--gold);}
+  .menu-btn.save-btn:hover,.menu-btn.save-btn:active{background:var(--gold);color:var(--ocean-deep);}
+
+  /* ── HUD TOP ── */
+  #hud{
+    position:absolute;top:0;left:0;right:0;
+    z-index:50;pointer-events:none;
+    padding:3px 5px;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  #hud.hidden{display:none;}
+  .hud-top{display:flex;justify-content:space-between;align-items:stretch;gap:3px;}
+
+  .hud-panel{
+    background:var(--ui-bg);border:2px solid var(--ui-border);
+    padding:3px 7px;
+    font-size:clamp(4px,1.1vw,7px);
+    line-height:1.75;
+    flex:1;
+  }
+  .hud-panel span{color:var(--gold);}
+  .bar-container{display:flex;align-items:center;gap:3px;margin:1px 0;}
+  .bar-label{font-size:clamp(3.5px,0.9vw,6px);min-width:44px;white-space:nowrap;}
+  .bar-bg{background:#1a2a3a;border:1px solid #2980b9;height:6px;flex:1;min-width:50px;max-width:90px;position:relative;}
+  .bar-fill{height:100%;transition:width .35s;}
+  .bar-fill.energy{background:linear-gradient(90deg,#f39c12,#f1c40f);}
+  .bar-fill.hunger{background:linear-gradient(90deg,#e74c3c,#e67e22);}
+  .bar-fill.thirst{background:linear-gradient(90deg,#3498db,#5dade2);}
+  .bar-fill.eco{background:linear-gradient(90deg,#e74c3c,#27ae60);}
+
+  .time-panel{
+    background:var(--ui-bg);border:2px solid var(--gold);
+    padding:2px 8px;
+    font-size:clamp(4px,1vw,7px);
+    text-align:center;color:var(--gold);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .time-big{font-size:clamp(7px,1.8vw,13px);color:var(--gold);display:block;margin-bottom:1px;}
+
+  /* ── BOTTOM ACTION BAR ── */
+  #bottom-panel{position:absolute;bottom:0;left:0;right:0;z-index:50;pointer-events:none;}
+  #bottom-panel.hidden{display:none;}
+  .action-bar{
+    display:flex;justify-content:center;align-items:stretch;
+    gap:3px;padding:4px 5px;
+    background:var(--ui-bg);border-top:2px solid var(--ui-border);
+    flex-wrap:nowrap;overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .action-bar::-webkit-scrollbar{display:none;}
+  .action-btn{
+    font-family:var(--font-pixel);
+    font-size:clamp(4px,1.1vw,7.5px);
+    padding:6px 9px;
+    background:var(--ocean-mid);border:2px solid var(--ui-border);
+    color:var(--white);cursor:pointer;pointer-events:all;
+    transition:background .1s,border-color .1s;
+    line-height:1.4;text-align:center;
+    white-space:nowrap;flex-shrink:0;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    min-height:38px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .action-btn:active,.action-btn:hover{background:var(--ocean-surf);border-color:var(--wave);}
+  .action-btn.fishing{border-color:var(--gold);color:var(--gold);animation:fishingPulse 1s ease-in-out infinite;}
+  @keyframes fishingPulse{0%,100%{box-shadow:0 0 4px var(--gold);}50%{box-shadow:0 0 14px var(--gold);}}
+  .action-btn.save-action{border-color:var(--gold);color:var(--gold);}
+  .action-btn.zone-btn{border-color:#2a6040;}
+  .action-btn.zone-btn.active{border-color:#27ae60;background:#0d3020;color:#5dde8a;}
+
+  /* ── MESSAGE LOG ── */
+  #message-log{
+    position:absolute;
+    bottom:50px;left:5px;
+    width:min(260px,35vw);
+    max-height:90px;overflow-y:auto;
+    z-index:50;pointer-events:none;
+    scrollbar-width:none;
+  }
+  #message-log::-webkit-scrollbar{display:none;}
+  #message-log.hidden{display:none;}
+  .log-entry{
+    background:rgba(8,18,35,.9);border-left:2px solid var(--wave);
+    padding:2px 6px;font-family:var(--font-vt);
+    font-size:clamp(10px,1.8vw,14px);
+    margin-bottom:2px;animation:logFade .25s ease;
+  }
+  .log-entry.warn{border-color:var(--gold);color:var(--gold);}
+  .log-entry.danger{border-color:var(--red);color:var(--red);}
+  .log-entry.success{border-color:var(--green);color:var(--green);}
+  .log-entry.rare{border-color:#9b59b6;color:#d2a8f0;}
+  .log-entry.save{border-color:var(--gold);color:var(--gold);}
+  @keyframes logFade{from{opacity:0;transform:translateX(-6px)}to{opacity:1}}
+
+  /* ── ZONE INDICATOR ── */
+  #zone-indicator{
+    position:absolute;top:50%;right:6px;
+    transform:translateY(-50%);
+    background:var(--ui-bg);border:2px solid var(--ui-border);
+    padding:5px 7px;font-size:clamp(4px,.9vw,6.5px);
+    text-align:center;z-index:50;pointer-events:none;
+    max-width:90px;
+  }
+  #zone-indicator.hidden{display:none;}
+  .zone-name{color:var(--wave);margin-bottom:2px;font-size:clamp(4.5px,1vw,7px);}
+  .zone-species{color:var(--sand);font-family:var(--font-vt);font-size:clamp(9px,1.5vw,12px);line-height:1.4;}
+
+  /* ── MODAL ── */
+  #modal-overlay{position:absolute;inset:0;background:rgba(5,12,24,.9);z-index:200;display:flex;align-items:center;justify-content:center;}
+  #modal-overlay.hidden{display:none;}
+  .modal-box{
+    background:var(--ocean-deep);border:3px solid var(--ui-border);
+    padding:14px 16px;
+    max-width:min(480px,90vw);width:100%;
+    max-height:86vh;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:#2980b9 #0d2240;
+  }
+  .modal-title{font-size:clamp(7px,1.4vw,10px);color:var(--wave);margin-bottom:10px;text-align:center;border-bottom:2px solid var(--ui-border);padding-bottom:6px;}
+  .modal-close{
+    font-family:var(--font-pixel);font-size:clamp(5px,.9vw,7px);
+    background:transparent;border:2px solid var(--red);color:var(--red);
+    cursor:pointer;padding:4px 10px;float:right;margin-bottom:6px;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  }
+  .modal-close:active,.modal-close:hover{background:var(--red);color:#fff;}
+  .logbook-entry{background:var(--ocean-mid);border-left:3px solid var(--green);padding:4px 8px;margin-bottom:4px;font-family:var(--font-vt);font-size:clamp(11px,1.8vw,15px);}
+  .lb-name{color:var(--wave);}.lb-data{color:var(--sand);}
+  .shop-item{display:flex;justify-content:space-between;align-items:center;background:var(--ocean-mid);border:2px solid var(--ocean-surf);padding:6px 9px;margin-bottom:4px;gap:6px;}
+  .shop-item-name{font-family:var(--font-vt);font-size:clamp(11px,1.8vw,15px);color:var(--sand);}
+  .shop-item-price{color:var(--gold);font-size:clamp(5px,1vw,8px);white-space:nowrap;}
+  .shop-buy-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.8vw,7px);background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;padding:4px 8px;touch-action:manipulation;}
+  .shop-buy-btn:active,.shop-buy-btn:hover{background:var(--green);}
+
+  /* ── FISH SELECTION MODAL ── */
+  #fish-select-overlay{position:absolute;inset:0;background:rgba(5,12,24,.92);z-index:210;display:none;align-items:center;justify-content:center;}
+  #fish-select-overlay.show{display:flex;}
+  .fish-select-box{
+    background:var(--ocean-deep);border:3px solid var(--gold);
+    padding:14px 16px;
+    max-width:min(520px,92vw);width:100%;
+    max-height:88vh;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:#f1c40f #0d2240;
+  }
+  .fish-select-title{font-size:clamp(7px,1.5vw,11px);color:var(--gold);margin-bottom:8px;text-align:center;border-bottom:2px solid var(--gold);padding-bottom:6px;}
+  .fish-select-desc{font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:var(--sand);margin-bottom:12px;line-height:1.4;}
+  .fish-option{display:flex;align-items:center;gap:8px;background:var(--ocean-mid);border:2px solid var(--ocean-surf);padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
+  .fish-option:hover,.fish-option.selected{border-color:var(--gold);background:#0d3020;}
+  .fish-option-icon{width:32px;height:24px;flex-shrink:0;border-radius:3px;}
+  .fish-option-info{flex:1;min-width:0;}
+  .fish-option-name{font-family:var(--font-pixel);font-size:clamp(5px,1vw,8px);color:var(--wave);margin-bottom:2px;}
+  .fish-option-details{font-family:var(--font-vt);font-size:clamp(10px,1.5vw,13px);color:var(--sand);}
+  .fish-option-value{font-size:clamp(4px,.8vw,6px);color:var(--gold);white-space:nowrap;}
+  .fish-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
+  .fish-select-btn:hover{background:var(--green);}
+  .fish-select-close{position:absolute;top:8px;right:10px;font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);background:transparent;border:2px solid var(--red);color:var(--red);cursor:pointer;padding:4px 10px;}
+  .fish-select-close:hover{background:var(--red);color:#fff;}
+
+  /* ── CATCH POPUP ── */
+  #catch-popup{
+    position:absolute;top:28%;left:50%;
+    transform:translateX(-50%) scale(0);
+    background:var(--ui-bg);border:3px solid var(--gold);
+    padding:12px 20px;text-align:center;z-index:150;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;
+  }
+  #catch-popup.show{transform:translateX(-50%) scale(1);}
+  .catch-name{font-size:clamp(6px,1.2vw,9px);color:var(--wave);margin:4px 0;}
+  .catch-value{font-size:clamp(5px,1vw,8px);color:var(--gold);}
+
+  /* ── STORM ── */
+  #storm-overlay{position:absolute;inset:0;background:rgba(5,10,20,.6);z-index:45;pointer-events:none;display:none;}
+  #storm-overlay.active{display:block;animation:stormFlash .8s linear infinite;}
+  @keyframes stormFlash{0%,90%,100%{background:rgba(5,10,20,.6);}95%{background:rgba(200,220,255,.12);}}
+
+  /* ── SAVE TOAST ── */
+  #save-toast{
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%) scale(0);
+    background:var(--ui-bg);border:3px solid var(--gold);
+    padding:14px 24px;text-align:center;z-index:300;
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1);pointer-events:none;
+    font-size:clamp(7px,1.5vw,11px);color:var(--gold);
+  }
+  #save-toast.show{transform:translate(-50%,-50%) scale(1);}
+
+  /* ── SAVE SLOTS ── */
+  .save-slot{background:var(--ocean-mid);border:2px solid var(--ocean-surf);padding:8px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  .save-slot.occupied{border-color:var(--ui-border);}
+  .save-slot-info{font-family:var(--font-vt);font-size:clamp(11px,1.8vw,15px);color:var(--sand);}
+  .save-slot-info b{color:var(--wave);}
+  .slot-btns{display:flex;gap:4px;flex-wrap:wrap;}
+  .slot-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.9vw,7px);padding:5px 8px;cursor:pointer;border:2px solid;background:transparent;touch-action:manipulation;}
+  .slot-btn.load{border-color:var(--wave);color:var(--wave);}
+  .slot-btn.load:active,.slot-btn.load:hover{background:var(--wave);color:var(--ocean-deep);}
+  .slot-btn.save-s{border-color:var(--gold);color:var(--gold);}
+  .slot-btn.save-s:active,.slot-btn.save-s:hover{background:var(--gold);color:var(--ocean-deep);}
+  .slot-btn.del{border-color:var(--red);color:var(--red);}
+  .slot-btn.del:active,.slot-btn.del:hover{background:var(--red);color:#fff;}
+
+  /* ── HELP SCREEN ── */
+  #help-screen{background:rgba(5,12,22,.98);}
+
+  /* ── ZONE MAP OVERLAY ── */
+  #zone-map-overlay{
+    position:absolute;inset:0;z-index:190;
+    background:rgba(5,15,26,0.88);
+    display:none;align-items:center;justify-content:center;
+    pointer-events:none;
+  }
+  #zone-map-overlay.show{display:flex;pointer-events:all;}
+  #zone-map-box{
+    background:var(--ocean-deep);border:3px solid var(--ui-border);
+    width:min(620px,95vw);max-height:85vh;overflow-y:auto;position:relative;
+  }
+  .zone-map-info{padding:14px;}
+  .zone-map-close{
+    position:absolute;top:8px;right:10px;
+    font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);
+    background:transparent;border:2px solid var(--red);
+    color:var(--red);cursor:pointer;padding:4px 10px;
+  }
+  .zone-map-close:hover{background:var(--red);color:#fff;}
+  .zone-map-title{font-family:var(--font-pixel);font-size:clamp(8px,1.4vw,12px);color:var(--wave);margin-bottom:8px;}
+  #zm-desc{font-family:var(--font-vt);font-size:clamp(13px,1.9vw,16px);color:var(--sand);line-height:1.5;margin-bottom:10px;}
+  .zone-species-chip{display:inline-block;font-family:var(--font-vt);font-size:clamp(12px,1.7vw,15px);color:var(--wave);background:var(--ocean-mid);border:1px solid var(--ocean-surf);padding:2px 8px;margin:2px;}
+  .zone-enter-btn{font-family:var(--font-pixel);font-size:clamp(6px,1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
+  .zone-enter-btn:hover{background:var(--green);}
+
+  /* ── CANTINA INTERIOR ── */
+  #cantina-screen{
+    position:absolute;inset:0;z-index:180;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(10,5,2,0);
+    pointer-events:none;
+    transition:background 0.4s;
+  }
+  #cantina-screen.open{display:flex;background:rgba(10,5,2,0.88);pointer-events:all;}
+  #cantina-box{
+    background:var(--ocean-deep);border:3px solid #c8a040;
+    width:min(700px,96vw);max-height:88vh;overflow-y:auto;
+    position:relative;
+  }
+  #cantina-interior-canvas{display:block;width:100%;height:160px;image-rendering:pixelated;}
+  .cantina-tabs{display:flex;border-bottom:2px solid #c8a040;background:#0a0d08;}
+  .cantina-tab{font-family:var(--font-pixel);font-size:clamp(5px,0.9vw,7px);padding:8px 12px;cursor:pointer;color:#806040;border:none;background:none;border-bottom:3px solid transparent;letter-spacing:1px;}
+  .cantina-tab.active{color:#f1c40f;border-bottom-color:#f1c40f;background:#0d1208;}
+  .cantina-tab:hover:not(.active){color:#c8a040;}
+  .cantina-panel{display:none;padding:14px;}
+  .cantina-panel.active{display:block;}
+  .deal-card{background:#0d1a0a;border:2px solid #2a4020;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .deal-card:hover{border-color:#c8a040;}
+  .deal-name{font-family:var(--font-vt);font-size:clamp(14px,2vw,18px);color:#d0c890;}
+  .deal-desc{font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:#808870;margin-top:2px;}
+  .deal-price{font-family:var(--font-pixel);font-size:clamp(5px,0.85vw,7px);color:var(--gold);}
+  .deal-btn{font-family:var(--font-pixel);font-size:clamp(5px,0.8vw,7px);padding:6px 12px;cursor:pointer;border:2px solid;background:transparent;}
+  .deal-btn.buy{border-color:var(--green);color:var(--green);}
+  .deal-btn.buy:hover{background:var(--green);color:#000;}
+  .deal-btn.sell{border-color:var(--wave);color:var(--wave);}
+  .deal-btn.sell:hover{background:var(--wave);color:#000;}
+  .rumor-entry{font-family:var(--font-vt);font-size:clamp(13px,1.9vw,16px);color:#a0a878;padding:8px 12px;border-left:3px solid #604820;margin-bottom:6px;background:#0a100a;}
+  .cantina-close-btn{position:absolute;top:10px;right:14px;font-family:var(--font-pixel);font-size:clamp(5px,0.85vw,7px);background:transparent;border:2px solid #804020;color:#c06030;cursor:pointer;padding:5px 10px;}
+  .cantina-close-btn:hover{background:#804020;color:#fff;}
+
+  /* ── LOGBOOK ENTRY TOAST ── */
+  #logbook-entry-overlay{
+    position:absolute;bottom:90px;right:12px;width:min(300px,48vw);
+    background:rgba(5,20,12,0.97);border:2px solid var(--green);
+    z-index:160;transform:translateX(120%);
+    transition:transform 0.4s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;display:flex;gap:0;
+  }
+  #logbook-entry-overlay.show{transform:translateX(0);}
+  #lb-entry-canvas{display:block;flex-shrink:0;image-rendering:pixelated;border-right:2px solid rgba(39,174,96,0.4);}
+  .lb-entry-text{padding:8px 10px;flex:1;min-width:0;}
+  .lb-entry-header{font-family:var(--font-pixel);font-size:clamp(5px,0.9vw,7px);color:var(--green);margin-bottom:4px;letter-spacing:1px;}
+  .lb-entry-name-big{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);color:var(--wave);margin-bottom:5px;}
+  .lb-entry-desc-text{font-family:var(--font-vt);font-size:clamp(11px,1.7vw,14px);color:var(--sand);line-height:1.4;}
+  .lb-entry-zone{font-family:var(--font-pixel);font-size:clamp(4px,0.75vw,6px);color:var(--gold);margin-top:5px;}
+
+
+  /* ── PORTRAIT MODE (mobile vertical) ── */
+  @media (orientation: portrait) {
+    /* Larger text for small portrait screens */
+    .action-btn {
+      font-size: clamp(6px, 2.2vw, 10px);
+      padding: 7px 8px;
+      min-height: 36px;
+    }
+    .hud-panel {
+      font-size: clamp(6px, 1.6vw, 9px);
+      padding: 4px 7px;
+    }
+    .bar-label { font-size: clamp(5px, 1.4vw, 8px); }
+    .bar-bg { width: 55px; }
+    .time-display { font-size: clamp(6px, 1.5vw, 9px); }
+    #message-log {
+      width: min(96vw, 360px);
+      bottom: 52px;
+      left: 2px;
+      max-height: 80px;
+    }
+    #zone-indicator {
+      top: auto;
+      bottom: 56px;
+      right: 4px;
+      transform: none;
+      max-width: 90px;
+    }
+    /* Catch popup centered for portrait */
+    #catch-popup {
+      top: 25%;
+      width: min(280px, 85vw);
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+    }
+    #catch-popup.show { transform: translateX(-50%) scale(1); }
+    /* Action bar scrollable in portrait */
+    .action-bar {
+      gap: 3px;
+      padding: 3px 4px;
+      overflow-x: auto;
+      justify-content: flex-start;
+    }
+    /* Modal wider on portrait */
+    .modal-box {
+      max-width: 98vw;
+      padding: 12px;
+    }
+    /* Cantina and zone map full width */
+    #cantina-box, #zone-map-box {
+      width: 98vw;
+    }
+    /* Logbook toast at top-right on portrait */
+    #logbook-entry-overlay {
+      bottom: auto;
+      top: 70px;
+      right: 4px;
+      width: min(260px, 90vw);
+    }
+    /* Save toast */
+    #save-toast {
+      font-size: clamp(7px, 2vw, 11px);
+      padding: 12px 20px;
+    }
+  }
+
+  /* Small portrait phones */
+  @media (orientation: portrait) and (max-width: 430px) {
+    .action-btn {
+      font-size: clamp(5px, 2vw, 8px);
+      padding: 6px 6px;
+    }
+    .hud-panel { font-size: clamp(5px, 1.5vw, 7px); }
+    .bar-bg { width: 45px; }
+  }
+
+
+  /* ═══════════════════════════════════════
+     PORTRAIT / MOBILE VERTICAL LAYOUT
+     ═══════════════════════════════════════ */
+  @media (orientation: portrait) {
+    /* HUD: compact single row at top */
+    .hud-top {
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+    .hud-panel {
+      padding: 3px 6px;
+      font-size: clamp(4.5px, 2.2vw, 7px);
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .bar-label { min-width: 40px; font-size: clamp(3.5px, 1.8vw, 5.5px); }
+    .bar-bg { width: 55px; height: 6px; }
+    .time-display { font-size: clamp(4px, 2vw, 7px); padding: 3px 6px; }
+    .time-big { font-size: clamp(9px, 4vw, 14px); }
+
+    /* Action bar: 2 rows, bigger touch targets */
+    .action-bar {
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 4px;
+      justify-content: space-around;
+    }
+    .action-btn {
+      font-size: clamp(5px, 2.2vw, 8px);
+      padding: 8px 6px;
+      min-height: 36px;
+      flex: 1 1 calc(20% - 4px);
+      max-width: calc(25% - 4px);
+    }
+
+    /* Zone indicator: top right but smaller */
+    #zone-indicator {
+      top: auto;
+      bottom: 120px;
+      right: 4px;
+      transform: none;
+      max-width: 90px;
+      font-size: clamp(4px, 1.8vw, 6px);
+    }
+    .zone-name { font-size: clamp(4.5px, 2vw, 7px); }
+    .zone-species { font-size: clamp(9px, 3.5vw, 12px); }
+
+    /* Message log: narrower, bottom left above buttons */
+    #message-log {
+      bottom: 130px;
+      left: 4px;
+      width: min(260px, 65vw);
+      max-height: 90px;
+    }
+    .log-entry { font-size: clamp(10px, 3.5vw, 13px); }
+
+    /* Catch popup: centered, smaller */
+    #catch-popup {
+      top: 35%;
+      width: min(220px, 75vw);
+    }
+    .catch-name { font-size: clamp(6px, 2.5vw, 9px); }
+    .catch-value { font-size: clamp(5px, 2vw, 8px); }
+
+    /* Modals: full width on portrait */
+    .modal-box {
+      max-width: 98vw;
+      padding: 12px;
+      max-height: 90vh;
+    }
+    .modal-title { font-size: clamp(7px, 3vw, 11px); }
+
+    /* Cantina box: full width */
+    #cantina-box { width: 99vw; }
+    #cantina-interior-canvas { height: 130px; }
+    .cantina-tab { font-size: clamp(4.5px, 2vw, 7px); padding: 6px 8px; }
+
+    /* Zone map: full width */
+    #zone-map-box { width: 99vw; }
+    #zone-map-canvas { width: 100%; height: auto; }
+
+    /* Save slots */
+    .save-slot { flex-direction: column; align-items: flex-start; }
+
+    /* Fishing minigame: wider */
+    #fishing-minigame { width: 92vw; left: 4vw; }
+
+    /* Logbook toast: left side on portrait */
+    #logbook-entry-overlay {
+      bottom: 140px;
+      right: auto;
+      left: 4px;
+      width: min(280px, 90vw);
+      transform: translateX(-110%);
+    }
+    #logbook-entry-overlay.show { transform: translateX(0); }
+  }
+
+</style>
+</head>
+<body>
+<div id="game-container">
+  <!-- PORTRAIT ROTATE PROMPT -->
+  <!-- portrait mode supported natively -->
+
+  <canvas id="gameCanvas"></canvas>
+  <div id="storm-overlay"></div>
+
+  <div class="screen" id="title-screen">
+    <canvas id="titleCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="game-title" style="margin-bottom:4px;">MAR VIVO</div>
+    <div class="game-subtitle">Simulador de Pesca Sustentable</div>
+    <br>
+    <button class="menu-btn" onclick="startGame()">NUEVA PARTIDA</button>
+    <button class="menu-btn save-btn" onclick="openSaveLoad('load')">CARGAR PARTIDA</button>
+    <button class="menu-btn" onclick="showHelp()">COMO JUGAR</button>
+    <br>
+    <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:#5dade250;text-align:center;z-index:1;margin-top:6px;">Un proyecto educativo sobre recursos pesqueros</div>
+  </div>
+
+  <div class="screen hidden" id="help-screen" style="background:rgba(5,12,22,.97);">
+    <div style="background:var(--ui-bg);border:3px solid var(--ui-border);padding:20px;max-width:min(500px,90vw);max-height:80vh;overflow-y:auto;">
+      <div style="font-size:clamp(8px,1.3vw,11px);color:var(--wave);margin-bottom:12px;">COMO JUGAR</div>
+      <div style="font-family:var(--font-vt);font-size:clamp(13px,1.9vw,17px);line-height:1.7;color:var(--sand);">
+        PESCA: Usa los botones para cambiar zona y pescar con distintos metodos.<br><br>
+        ZONAS: Manglar (peces pequenos), Arrecife (especies raras), Mar Abierto (pesca industrial).<br><br>
+        ECO: La barra verde mide la salud del oceano. No sobrepesques.<br><br>
+        MERCADO: Vende capturas, compra comida, agua y combustible.<br><br>
+        BITACORA: Registra las especies descubiertas para ganar bonus.<br><br>
+        SUPERVIVENCIA: Cuida energia, hambre y sed. Las tormentas son peligrosas.<br><br>
+        GUARDAR: Usa el boton GUARDAR en la barra de acciones para conservar tu progreso en 3 ranuras.
+      </div>
+      <br>
+      <button class="menu-btn" onclick="hideHelp()">VOLVER</button>
+    </div>
+  </div>
+
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <!-- LEFT: money + fuel + survival -->
+      <div class="hud-panel" style="min-width:0">
+        <div><span style="color:#f1c40f">$</span><span id="hud-money">0</span> &nbsp; <span style="color:#e0a020">⛽</span><span id="hud-fuel">100</span>%</div>
+        <div class="bar-container"><span class="bar-label">Energia</span><div class="bar-bg"><div class="bar-fill energy" id="bar-energy" style="width:100%"></div></div></div>
+        <div class="bar-container"><span class="bar-label">Hambre</span><div class="bar-bg"><div class="bar-fill hunger" id="bar-hunger" style="width:100%"></div></div></div>
+        <div class="bar-container"><span class="bar-label">Sed</span><div class="bar-bg"><div class="bar-fill thirst" id="bar-thirst" style="width:100%"></div></div></div>
+      </div>
+      <!-- CENTER: time/season/weather -->
+      <div class="time-panel">
+        <span class="time-big" id="hud-time">06:00</span>
+        <div id="hud-season" style="color:var(--sand)">PRIMAVERA</div>
+        <div id="hud-weather" style="color:var(--wave)">Soleado</div>
+        <div id="hud-temp" style="color:#e07050">24 C</div>
+        <div style="margin-top:1px">DIA <span id="hud-day" style="color:var(--gold)">1</span></div>
+      </div>
+      <!-- RIGHT: eco + catches -->
+      <div class="hud-panel" style="min-width:0;text-align:right">
+        <div>Cap:<span id="hud-caught">0</span> &nbsp; Inv:<span id="hud-inv">0</span>/20</div>
+        <div style="color:var(--gold);font-size:clamp(3.5px,.65vw,5.5px)"><span id="hud-level">Novato</span></div>
+        <div class="bar-container" style="justify-content:flex-end">
+          <span class="bar-label" style="min-width:0;margin-right:3px">ECO</span>
+          <div class="bar-bg"><div class="bar-fill eco" id="bar-eco" style="width:80%"></div></div>
+          <span id="eco-pct" style="font-size:clamp(4px,.7vw,6px);color:var(--green);margin-left:3px;min-width:22px">80%</span>
+        </div>
+        <div id="eco-warning" style="color:var(--red);font-size:clamp(3.5px,.7vw,5.5px);display:none;text-align:right">SOBREPESCA!</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="zone-indicator" class="hidden">
+    <div class="zone-name" id="zone-name">MANGLAR</div>
+    <div class="zone-species" id="zone-species">Robalo, Mojarra<br>Cangrejo</div>
+  </div>
+
+  <!-- MAPA DE ZONAS -->
+  <div id="zone-map-overlay">
+    <div id="zone-map-box">
+      <canvas id="zone-map-canvas" width="580" height="200"></canvas>
+      <div class="zone-map-info">
+        <button class="zone-map-close" onclick="closeZoneMap()">X CERRAR</button>
+        <div class="zone-map-title" id="zm-title">MANGLAR</div>
+        <div class="zone-map-desc" id="zm-desc">Descripción de zona</div>
+        <div class="zone-map-species" id="zm-species"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--gold)" id="zm-cost"></div>
+          <button class="zone-travel-btn" id="zm-travel-btn">NAVEGAR AQUI</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELECCION DE TIPO DE PEZ -->
+  <div id="fish-select-overlay">
+    <div class="fish-select-box" style="position:relative;">
+      <button class="fish-select-close" onclick="closeFishSelect()">X</button>
+      <div class="fish-select-title">ELIGE TU TIPO DE PEZA</div>
+      <div class="fish-select-desc" id="fs-desc">Selecciona el tipo de pez que deseas pescar en esta zona:</div>
+      <div id="fish-options-container"></div>
+      <button class="fish-select-btn" onclick="confirmFishSelection()">PESCAR AHORA</button>
+    </div>
+  </div>
+
+  <!-- MINIJUEGO PESCA -->
+  <div id="fishing-minigame">
+    <div class="fishing-bar-wrap" onclick="fishingClick()">
+      <div>JALAR! CLICK AHORA</div>
+      <div class="fishing-bar-track">
+        <div class="fishing-bar-zone" id="fish-zone"></div>
+        <div class="fishing-bar-cursor" id="fish-cursor"></div>
+      </div>
+      <div class="fishing-hint" id="fish-hint">Espera el momento justo...</div>
+    </div>
+  </div>
+
+  <div id="message-log" class="hidden"></div>
+
+  <div id="bottom-panel" class="hidden">
+    <div class="action-bar">
+      <button class="action-btn zone-btn active" id="btn-z-manglar" onclick="openZoneMap('manglar')">MANGLAR</button>
+      <button class="action-btn zone-btn" id="btn-z-arrecife" onclick="openZoneMap('arrecife')">ARRECIFE</button>
+      <button class="action-btn zone-btn" id="btn-z-abierto" onclick="openZoneMap('abierto')">MAR ABIERTO</button>
+      <button class="action-btn" id="btn-fish" onclick="fish()">PESCAR</button>
+      <button class="action-btn" id="btn-method" onclick="changeMethod()">METODO</button>
+      <button class="action-btn" onclick="openMarket()">MERCADO</button>
+      <button class="action-btn" style="border-color:#e0a820;color:#e0a820" onclick="openCantina()">CANTINA</button>
+      <button class="action-btn" style="border-color:#70c050;color:#70c050" onclick="openMissions()">MISIONES</button>
+      <button class="action-btn" onclick="openLogbook()">BITACORA</button>
+      <button class="action-btn" onclick="rest()">DESCANSAR</button>
+      <button class="action-btn save-action" onclick="openSaveLoad('save')">GUARDAR</button>
+    </div>
+  </div>
+
+  <div id="catch-popup">
+    <canvas id="catchCanvas" width="64" height="48" style="display:block;margin:0 auto;border:2px solid rgba(255,255,255,.15);"></canvas>
+    <div class="catch-name" id="catch-name">Robalo</div>
+    <div class="catch-value" id="catch-value">+$120 | 1.2 kg</div>
+    <div id="catch-desc" style="font-family:var(--font-vt);font-size:clamp(10px,1.5vw,13px);color:var(--sand);margin-top:4px;max-width:200px;line-height:1.3;"></div>
+  </div>
+
+  <!-- LOGBOOK ENTRY TOAST -->
+  <div id="logbook-entry-overlay">
+    <canvas id="lb-entry-canvas" width="120" height="90"></canvas>
+    <div class="lb-entry-text">
+      <div class="lb-entry-header">NUEVA ESPECIE</div>
+      <div class="lb-entry-name-big" id="lb-entry-name">Robalo</div>
+      <div class="lb-entry-desc-text" id="lb-entry-desc">Descripcion del pez.</div>
+      <div class="lb-entry-zone" id="lb-entry-zone"></div>
+    </div>
+  </div>
+
+  <!-- CANTINA INTERIOR -->
+  <div id="cantina-screen">
+    <div id="cantina-box">
+      <button class="cantina-close-btn" onclick="closeCantina()">X SALIR</button>
+      <canvas id="cantina-interior-canvas" width="700" height="160"></canvas>
+      <div class="cantina-tabs">
+        <button class="cantina-tab active" onclick="cantinaTab(this,'tratos')">TRATOS</button>
+        <button class="cantina-tab" onclick="cantinaTab(this,'venta')">VENDER</button>
+        <button class="cantina-tab" onclick="cantinaTab(this,'rumores')">RUMORES</button>
+        <button class="cantina-tab" onclick="cantinaTab(this,'menu')">MENU</button>
+        <button class="cantina-tab" onclick="cantinaTab(this,'misiones')">MISIONES</button>
+      </div>
+      <div id="cantina-tratos" class="cantina-panel active"></div>
+      <div id="cantina-venta" class="cantina-panel"></div>
+      <div id="cantina-rumores" class="cantina-panel"></div>
+      <div id="cantina-menu" class="cantina-panel"></div>
+      <div id="cantina-misiones" class="cantina-panel"></div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" class="hidden">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">X CERRAR</button>
+      <div class="modal-title" id="modal-title">TITULO</div>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div id="save-toast">PARTIDA GUARDADA</div>
+</div>
+
+<script>
+// ─── STORAGE ───────────────────────────────────────────────
+async function storageSave(key,value){
+  try{
+    const json=JSON.stringify(value);
+    if(!json||json==='null'){console.warn('getState returned empty');return false;}
+    await window.storage.set(key,json);
+    return true;
+  }catch(e){
+    console.warn('storageSave error:',e);
+    logMsg('Error al guardar: '+String(e).slice(0,60),'danger');
+    return false;
+  }
+}
+async function storageLoad(key){
+  try{const r=await window.storage.get(key);return r?JSON.parse(r.value):null;}catch(e){return null;}
+}
+async function storageDelete(key){try{await window.storage.delete(key);}catch(e){}}
+
+
+
+function setupClickSounds(){
+  document.querySelectorAll('.action-btn,.menu-btn,.cantina-tab').forEach(btn=>{
+    if(!btn._sfx){ btn._sfx=true; btn.addEventListener('pointerdown',()=>SFX.click(),{passive:true}); }
+  });
+}
+
+// ── PIXEL SOUND ENGINE ──────────────────────────────────────
+const SFX = (() => {
+  let ctx = null;
+  const get = () => {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx;
+  };
+  function tone(freq, dur, type='square', vol=0.15, decay=0.8) {
+    try {
+      const ac = get();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = type; osc.frequency.setValueAtTime(freq, ac.currentTime);
+      gain.gain.setValueAtTime(vol, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur * decay);
+      osc.start(ac.currentTime); osc.stop(ac.currentTime + dur);
+    } catch(e) {}
+  }
+  return {
+    cast:  () => { tone(440,0.08); setTimeout(()=>tone(600,0.12),80); },
+    catch: () => { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.1,'square',0.12),i*60)); },
+    miss:  () => { tone(220,0.15,'sawtooth',0.1); setTimeout(()=>tone(180,0.2,'sawtooth',0.1),100); },
+    rare:  () => { [261,329,392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.18,'sine',0.18),i*80)); },
+    sell:  () => { tone(880,0.07); setTimeout(()=>tone(1047,0.12),70); },
+    buy:   () => { tone(660,0.07); setTimeout(()=>tone(784,0.1),60); },
+    alert: () => { tone(330,0.1,'square',0.12); setTimeout(()=>tone(330,0.1,'square',0.12),180); },
+    storm: () => { tone(80,0.5,'sawtooth',0.2,0.5); setTimeout(()=>tone(60,0.8,'sawtooth',0.18,0.6),200); },
+    levelup: () => { [523,659,784,880,1047,1175,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.15,'sine',0.2),i*70)); },
+    click: () => { tone(800,0.04,'square',0.06); },
+    save:  () => { [440,554,659].forEach((f,i)=>setTimeout(()=>tone(f,0.1,'sine',0.12),i*60)); },
+  };
+})();
+
+// ─── ORIENTATION LOCK ──────────────────────────────────────
+function checkOrientation(){
+  const isPortrait = window.innerHeight > window.innerWidth;
+  document.body.dataset.portrait = isPortrait ? '1' : '0';
+  // Re-size canvas — only safe to call after initCanvas() runs
+  try {
+    const cv = document.getElementById('gameCanvas');
+    if(cv && typeof boatX !== 'undefined'){
+      cv.width = window.innerWidth;
+      cv.height = window.innerHeight;
+      boatX = cv.width * (isPortrait ? 0.25 : 0.5);
+      boatY = cv.height * 0.50;
+      if(typeof initWaves === 'function') initWaves();
+      if(typeof initBirds === 'function') initBirds();
+      if(typeof VILLAGERS_DEF !== 'undefined')
+        villagers = VILLAGERS_DEF.map(v=>({...v,px:v.xR*cv.width}));
+    }
+  } catch(e) {}
+}
+window.addEventListener('resize', () => { checkOrientation(); });
+window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,150));
+checkOrientation();
+
+// ─── STATE ─────────────────────────────────────────────────
+const G={
+  running:false,day:1,hour:6,minute:0,season:0,
+  seasons:['PRIMAVERA','VERANO','OTONO','INVIERNO'],
+  weather:'sunny',temp:24,zone:'manglar',
+  method:'anzuelo',methods:['anzuelo','red','trampa','artesanal','industrial'],methodIdx:0,
+  money:500,fuel:100,energy:100,hunger:100,thirst:100,eco:80,
+  caught:0,inventory:[],logbook:{},
+  fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0,
+};
+
+// ─── SPECIES ───────────────────────────────────────────────
+const SPECIES={
+  manglar:[
+    {name:'Robalo',     color:'#7fc5a8',belly:'#c8f0dc',fin:'#5a9a7a',weight:[.5,2.5],  value:[80,200],  rarity:.5, eco:1, desc:'Pez plateado del manglar. Se esconde entre las raices. Muy apreciado en el mercado local.'},
+    {name:'Mojarra',    color:'#a0c8e0',belly:'#d8f0ff',fin:'#6090b0',weight:[.2,.8],   value:[30,80],   rarity:.6, eco:1, desc:'Pequeno pez azulado muy comun en aguas someras. Vive en cardumenes y es facil de atrapar.'},
+    {name:'Cangrejo',   color:'#e05030',belly:'#f08060',fin:'#c03010',weight:[.1,.5],   value:[50,120],  rarity:.4, eco:1, desc:'Cangre jo rojo que vive entre raices. Sus pinzas son fuertes. Se mueve de lado con astucia.',crab:true},
+    {name:'Camaron',    color:'#f0a880',belly:'#ffd0b0',fin:'#d08060',weight:[.05,.2],  value:[60,150],  rarity:.5, eco:1, desc:'Translucido y rapido. Nada hacia atras cuando se asusta. Muy cotizado en cocina.',shrimp:true},
+    {name:'Trucha',     color:'#8080c0',belly:'#c0c0f0',fin:'#606090',weight:[.3,1.2],  value:[90,180],  rarity:.3, eco:2, desc:'Pez de tonos violaceos con manchas oscuras. Prefiere aguas limpias y frescas del manglar.'},
+    {name:'Bagre',      color:'#888870',belly:'#b8b8a0',fin:'#606050',weight:[.4,1.8],  value:[40,100],  rarity:.5, eco:1, desc:'Pez de fondo con bigotes sensores. Busca alimento en el lodo. Resistente y comun.'},
+  ],
+  arrecife:[
+    {name:'Pez Angel',  color:'#e0c020',belly:'#fff090',fin:'#c08000',weight:[.2,.8],   value:[150,350], rarity:.25,eco:2, desc:'Espectacular pez amarillo y negro del arrecife. Pareja de por vida. Simbolo de los arrecifes sanos.'},
+    {name:'Pez Loro',   color:'#40c880',belly:'#a0ffc0',fin:'#208850',weight:[.5,2.0],  value:[100,250], rarity:.3, eco:2, desc:'Pico duro como un pico de loro. Roe el coral para alimentarse y crea arena de playa al digerir.'},
+    {name:'Mero',       color:'#b05028',belly:'#e09060',fin:'#803010',weight:[1,5],     value:[200,500], rarity:.2, eco:3, desc:'Pez solitario y territorial. Se camufla entre las rocas. Puede cambiar de color con la edad.'},
+    {name:'Langosta',   color:'#d04020',belly:'#f08050',fin:'#901010',weight:[.3,1.5],  value:[300,700], rarity:.15,eco:3, desc:'Crustaceo nocturno de gran valor. Se esconde en grietas del arrecife durante el dia.',lobster:true},
+    {name:'Pulpo',      color:'#9040a0',belly:'#c870d0',fin:'#602060',weight:[.5,3.0],  value:[200,450], rarity:.2, eco:2, desc:'Maestro del disfraz. Tiene tres corazones y sangre azul. Muy inteligente para ser un molusco.',octopus:true},
+    {name:'Pez Globo',  color:'#e0e040',belly:'#fffff0',fin:'#a0a000',weight:[.1,.4],   value:[50,120],  rarity:.4, eco:1, desc:'Se infla como una pelota al sentirse amenazado. Contiene tetrodotoxina, un veneno potente.'},
+    {name:'Mantarraya', color:'#404050',belly:'#8080a0',fin:'#202030',weight:[5,20],    value:[0,0],     rarity:.05,eco:5, desc:'Majestuosa raya que planea entre las corrientes. Inofensiva. Liberada para proteger el ecosistema.',release:true},
+  ],
+  abierto:[
+    {name:'Atun',       color:'#2060a0',belly:'#80c0e8',fin:'#103060',weight:[5,30],    value:[500,2000],rarity:.2, eco:4, desc:'Nadador veloz de aguas abiertas. Puede alcanzar 70 km/h. Muy valorado en mercados internacionales.'},
+    {name:'Pargo',      color:'#d04040',belly:'#f09090',fin:'#901010',weight:[1,6],     value:[150,400], rarity:.3, eco:2, desc:'Pez rojo de carne firme. Habita fondos rocosos. Muy apreciado en la gastronomia local.'},
+    {name:'Sierra',     color:'#408080',belly:'#80d0d0',fin:'#205050',weight:[2,10],    value:[200,600], rarity:.25,eco:3, desc:'Pez largo y plateado con dientes afilados. Nada en grupos y ataca rapidamente a sus presas.'},
+    {name:'Dorado',     color:'#e0a020',belly:'#ffe080',fin:'#a07000',weight:[3,15],    value:[300,900], rarity:.15,eco:3, desc:'Pez de colores dorados y azules brillantes. Cambia de color al morir. Uno de los mas hermosos del mar.'},
+    {name:'Marlin',     color:'#3050c0',belly:'#90b0f0',fin:'#102080',weight:[50,200],  value:[0,0],     rarity:.03,eco:8, desc:'El gigante del mar abierto. Su pico puede medir un metro. Especie protegida, siempre liberado.',release:true},
+    {name:'Calamar G',  color:'#d080e0',belly:'#f0c0ff',fin:'#902090',weight:[10,50],   value:[400,1000],rarity:.05,eco:4, desc:'Criatura de las profundidades con tentaculos luminiscentes. Aparicion muy poco comun.',rare:true,squid:true},
+    {name:'Ballena J',  color:'#204060',belly:'#608090',fin:'#102030',weight:[0,0],     value:[0,0],     rarity:.005,eco:0, desc:'La ballena jorobada visita estas aguas en migracion. Su canto resuena kilometros. Siempre liberada.',release:true,rare:true},
+  ]
+};
+
+const ZONE_INFO={
+  manglar: {name:'MANGLAR',   species:'Robalo, Mojarra\nCangrejo, Camaron',fuelCost:5},
+  arrecife:{name:'ARRECIFE',  species:'Pez Angel, Mero\nLangosta, Pulpo',  fuelCost:12},
+  abierto: {name:'MAR ABIERTO',species:'Atun, Pargo\nDorado, Sierra',      fuelCost:20},
+};
+const METHOD_INFO={
+  anzuelo:   {label:'Anzuelo',   time:4000,eco:.5,bonus:{arrecife:1.2},miss:.3},
+  red:       {label:'Red',       time:6000,eco:2,bonus:{abierto:1.4},  miss:.15},
+  trampa:    {label:'Trampa',    time:8000,eco:1,bonus:{manglar:1.3},  miss:.2},
+  artesanal: {label:'Artesanal', time:5000,eco:.3,bonus:{manglar:1.1}, miss:.25},
+  industrial:{label:'Industrial',time:3000,eco:5,bonus:{abierto:1.6},  miss:.05},
+};
+
+// ─── CANVAS SETUP ──────────────────────────────────────────
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let wt=0;
+let boatX,boatY;
+let waves=[],particles=[],fishEntities=[],seaBirds=[];
+let tc=null,tcx=null,tw=0,th=0,tt=0;
+
+function initBirds(){
+  seaBirds=[];
+  // Pelicans – slow, big, glide low over water
+  for(let i=0;i<3;i++) seaBirds.push({
+    type:'pelican', x:Math.random()*canvas.width*.6,
+    y:canvas.height*(.38+Math.random()*.08),
+    dir:Math.random()>.5?1:-1, speed:0.5+Math.random()*.4,
+    bob:Math.random()*Math.PI*2, bobSpeed:0.6, wingPhase:Math.random()*Math.PI*2,
+    wingSpeed:0.04, size:10+Math.random()*4, soaring:Math.random()>0.4
+  });
+  // Seagulls – faster, smaller, more erratic
+  for(let i=0;i<6;i++) seaBirds.push({
+    type:'gull', x:Math.random()*canvas.width*.8,
+    y:canvas.height*(.30+Math.random()*.14),
+    dir:Math.random()>.5?1:-1, speed:0.9+Math.random()*.8,
+    bob:Math.random()*Math.PI*2, bobSpeed:1.2+Math.random()*.5,
+    wingPhase:Math.random()*Math.PI*2, wingSpeed:0.09+Math.random()*.04,
+    size:5+Math.random()*3, soaring:Math.random()>0.7, veer:Math.random()*Math.PI*2
+  });
+  // Sandpipers – tiny, run along beach
+  for(let i=0;i<4;i++) seaBirds.push({
+    type:'sandpiper', x:Math.random()*canvas.width*.5,
+    y:0, // y set dynamically to GY
+    dir:Math.random()>.5?1:-1, speed:0.4+Math.random()*.5,
+    bob:Math.random()*Math.PI*2, bobSpeed:3, wingPhase:0, wingSpeed:0,
+    size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
+  });
+}
+let PS=1; // pixel scale - adapts to screen
+
+const VILLAGERS_DEF=[
+  {xR:.10,yR:.775,type:'fisherman',dir:1, speed:.15},
+  {xR:.17,yR:.795,type:'scientist',dir:-1,speed:.10},
+  {xR:.07,yR:.810,type:'elder',    dir:1, speed:.07},
+  {xR:.23,yR:.790,type:'boy',      dir:-1,speed:.18},
+];
+let villagers=[];
+
+function initCanvas(){
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  // Scale pixel art to screen - bigger pixels on small screens for crisp look
+  PS=Math.max(1,Math.min(2.5,window.innerWidth/560));
+  boatX=canvas.width*.28; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
+  initWaves(); initFishEntities(); initBirds();
+  villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
+  renderLoop();
+}
+function initWaves(){
+  waves=[];
+  for(let i=0;i<14;i++) waves.push({x:Math.random()*canvas.width,y:.32+Math.random()*.28,speed:.3+Math.random()*.9,amp:3+Math.random()*9});
+}
+function initFishEntities(){
+  fishEntities=[];
+  const pool=SPECIES[G.zone]||SPECIES.manglar;
+  for(let i=0;i<10;i++){
+    const sp=pool[Math.floor(Math.random()*pool.length)];
+    fishEntities.push({x:Math.random()*canvas.width,y:canvas.height*(.40+Math.random()*.24),dir:Math.random()>.5?1:-1,speed:.4+Math.random()*1.3,sp,bob:Math.random()*Math.PI*2});
+  }
+}
+
+// ─── PIXEL ART HELPERS ─────────────────────────────────────
+function px(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)));}
+function pxs(x,y,w,h,c){// PS-scaled pixel rect
+  ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w*PS)),Math.max(1,Math.round(h*PS)));}
+function shade(hex,amt){
+  let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  r=Math.max(0,Math.min(255,r+amt));g=Math.max(0,Math.min(255,g+amt));b=Math.max(0,Math.min(255,b+amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ─── FISH PIXEL ART (detailed) ─────────────────────────────
+function drawFish(cx,cy,sp,sc,faceR){
+  sc=(sc||1)*PS; const f=faceR?1:-1;
+  ctx.save(); ctx.translate(Math.round(cx),Math.round(cy)); ctx.scale(f,1);
+  if(sp.crab){
+    // Detailed crab
+    px(-8*sc,-3*sc,16*sc,8*sc,sp.color);
+    px(-10*sc,-5*sc,3*sc,3*sc,sp.color); px(7*sc,-5*sc,3*sc,3*sc,sp.color); // top shell bumps
+    px(-4*sc,-7*sc,8*sc,4*sc,shade(sp.color,15)); // shell highlight
+    // Claws
+    px(-15*sc,-2*sc,6*sc,3*sc,sp.fin);px(-17*sc,-5*sc,4*sc,3*sc,sp.fin);
+    px(9*sc,-2*sc,6*sc,3*sc,sp.fin);px(13*sc,-5*sc,4*sc,3*sc,sp.fin);
+    // Legs
+    for(let i=0;i<3;i++){px((-8+i*4)*sc,4*sc,2*sc,5*sc,sp.color);px((4+i*3)*sc,4*sc,2*sc,4*sc,sp.color);}
+    // Eyes
+    px(-5*sc,-9*sc,3*sc,3*sc,'#fff');px(2*sc,-9*sc,3*sc,3*sc,'#fff');
+    px(-4*sc,-8*sc,2*sc,2*sc,'#111');px(3*sc,-8*sc,2*sc,2*sc,'#111');
+    px(-4*sc,-9*sc,1*sc,1*sc,'rgba(255,255,255,.6)');
+    // Belly
+    px(-6*sc,0,12*sc,3*sc,sp.belly);
+  } else if(sp.octopus){
+    // Detailed octopus
+    px(-7*sc,-9*sc,14*sc,14*sc,sp.color);
+    px(-5*sc,-11*sc,10*sc,4*sc,shade(sp.color,20)); // head top
+    px(-7*sc,-5*sc,2*sc,2*sc,shade(sp.color,-20)); // texture dots
+    px(2*sc,-3*sc,2*sc,2*sc,shade(sp.color,-20));
+    px(-2*sc,-7*sc,2*sc,2*sc,shade(sp.color,-20));
+    // Tentacles with suckers
+    for(let i=0;i<4;i++){
+      const tx=(-6+i*4)*sc;
+      px(tx,5*sc,3*sc,(5+i%2*2)*sc,sp.color);
+      px(tx+1,6*sc,1*sc,1*sc,sp.belly); // sucker
+      px(tx,10*sc+(i%2)*sc,3*sc,2*sc,shade(sp.color,-10));
+    }
+    // Eyes
+    px(-3*sc,-5*sc,3*sc,3*sc,'#fff');px(0*sc,-5*sc,3*sc,3*sc,'#fff');
+    px(-2*sc,-4*sc,2*sc,2*sc,sp.fin);px(1*sc,-4*sc,2*sc,2*sc,sp.fin);
+    px(-2*sc,-5*sc,1*sc,1*sc,'rgba(255,255,255,.5)');
+    // Ink highlight
+    px(-5*sc,-10*sc,10*sc,3*sc,shade(sp.color,30));
+  } else if(sp.lobster){
+    // Detailed lobster
+    px(-12*sc,-4*sc,24*sc,8*sc,sp.color);
+    px(-10*sc,-6*sc,7*sc,4*sc,shade(sp.color,-15));
+    px(3*sc,-6*sc,7*sc,4*sc,shade(sp.color,-15));
+    px(-8*sc,-7*sc,16*sc,3*sc,shade(sp.color,10)); // shell top
+    // Large claws
+    px(-18*sc,-3*sc,7*sc,4*sc,sp.fin);px(-22*sc,-6*sc,5*sc,4*sc,sp.fin);px(-22*sc,-2*sc,5*sc,3*sc,shade(sp.fin,-20));
+    px(11*sc,-3*sc,7*sc,4*sc,sp.fin);px(16*sc,-6*sc,5*sc,4*sc,sp.fin);px(16*sc,-2*sc,5*sc,3*sc,shade(sp.fin,-20));
+    // Legs
+    for(let i=0;i<4;i++){px((-7+i*4)*sc,4*sc,2*sc,6*sc,sp.color);px((-7+i*4)*sc,9*sc,3*sc,2*sc,sp.color);}
+    // Antennae
+    ctx.strokeStyle=sp.fin;ctx.lineWidth=sc*.5;
+    ctx.beginPath();ctx.moveTo(-8*sc,-7*sc);ctx.lineTo(-18*sc,-16*sc);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-4*sc,-7*sc);ctx.lineTo(-14*sc,-18*sc);ctx.stroke();
+    // Belly
+    px(-10*sc,0,20*sc,4*sc,sp.belly);
+    // Eye
+    px(-4*sc,-9*sc,3*sc,3*sc,'#1a1a2a');px(1*sc,-9*sc,3*sc,3*sc,'#1a1a2a');
+  } else if(sp.shrimp){
+    // Detailed shrimp
+    px(-8*sc,-4*sc,16*sc,7*sc,sp.color);
+    px(-6*sc,-6*sc,8*sc,3*sc,shade(sp.color,-15));
+    px(2*sc,-5*sc,5*sc,3*sc,shade(sp.color,-15));
+    px(-8*sc,-3*sc,16*sc,2*sc,shade(sp.color,15)); // dorsal line
+    // Swimmerets
+    for(let i=0;i<3;i++) px((-4+i*4)*sc,3*sc,2*sc,4*sc,sp.color);
+    // Antennae
+    ctx.strokeStyle=sp.fin;ctx.lineWidth=sc*.4;
+    ctx.beginPath();ctx.moveTo(-8*sc,-3*sc);ctx.lineTo(-16*sc,-9*sc);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-8*sc,-1*sc);ctx.lineTo(-14*sc,-8*sc);ctx.stroke();
+    // Tail fan
+    px(6*sc,-3*sc,6*sc,2*sc,sp.fin);px(6*sc,-1*sc,6*sc,2*sc,sp.fin);px(6*sc,1*sc,4*sc,2*sc,sp.fin);
+    // Eye
+    px(-7*sc,-5*sc,3*sc,3*sc,'#1a1a2a');
+    px(-6*sc,-5*sc,1*sc,1*sc,'rgba(255,255,255,.5)');
+    // Belly
+    px(-6*sc,-1*sc,12*sc,3*sc,sp.belly);
+  } else if(sp.squid){
+    // Detailed squid
+    px(-6*sc,-12*sc,12*sc,18*sc,sp.color);
+    px(-4*sc,-14*sc,8*sc,3*sc,shade(sp.color,25)); // mantle tip
+    px(-6*sc,-10*sc,2*sc,14*sc,shade(sp.color,-20)); // shadow side
+    // Fins
+    px(-9*sc,-4*sc,4*sc,8*sc,shade(sp.color,-10));px(5*sc,-4*sc,4*sc,8*sc,shade(sp.color,-10));
+    // Tentacles (8 short + 2 long)
+    for(let i=0;i<6;i++) px((-6+i*2)*sc,6*sc,2*sc,(5+i%2*4)*sc,sp.color);
+    px(-5*sc,6*sc,2*sc,12*sc,shade(sp.color,-10)); // long tentacles
+    px(3*sc,6*sc,2*sc,12*sc,shade(sp.color,-10));
+    // Sucker dots
+    for(let i=0;i<4;i++) px((-4+i*3)*sc,8*sc,1*sc,1*sc,sp.belly);
+    // Eyes (large)
+    px(-4*sc,-7*sc,4*sc,4*sc,'rgba(255,255,255,.9)');px(0*sc,-7*sc,4*sc,4*sc,'rgba(255,255,255,.9)');
+    px(-3*sc,-6*sc,3*sc,3*sc,sp.fin);px(1*sc,-6*sc,3*sc,3*sc,sp.fin);
+    px(-3*sc,-7*sc,1*sc,1*sc,'rgba(255,255,255,.7)');
+    // Ink sac (faint)
+    px(-2*sc,-2*sc,4*sc,4*sc,shade(sp.color,-30));
+  } else {
+    // DETAILED GENERIC FISH
+    const bw=18*sc, bh=10*sc;
+    // Shadow underneath
+    ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(-bw/2+sc,sc,bw,bh*.5);
+    // Tail fin (complex)
+    ctx.fillStyle=sp.fin;
+    ctx.beginPath();ctx.moveTo(7*sc,-sc);ctx.lineTo(14*sc,-6*sc);ctx.lineTo(12*sc,-2*sc);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(7*sc,sc);ctx.lineTo(14*sc,6*sc);ctx.lineTo(12*sc,2*sc);ctx.closePath();ctx.fill();
+    px(6*sc,-sc,3*sc,2*sc,shade(sp.fin,10)); // tail base
+    // Body base (belly)
+    ctx.fillStyle=sp.belly;
+    ctx.beginPath();ctx.ellipse(0,0,bw/2,bh/2,0,0,Math.PI*2);ctx.fill();
+    // Body color overlay (top half)
+    ctx.fillStyle=sp.color;
+    ctx.beginPath();ctx.ellipse(0,0,bw/2,bh/2,0,Math.PI,0);ctx.fill();
+    // Body highlight (shimmer)
+    ctx.fillStyle='rgba(255,255,255,.18)';
+    ctx.beginPath();ctx.ellipse(-2*sc,-2*sc,bw/4,bh/5,-0.3,0,Math.PI*2);ctx.fill();
+    // Lateral line
+    ctx.strokeStyle=shade(sp.color,-25);ctx.lineWidth=sc*.7;
+    ctx.beginPath();ctx.moveTo(-5*sc,0);ctx.quadraticCurveTo(0,-sc,6*sc,sc);ctx.stroke();
+    // Scale pattern (3 rows)
+    const scaleC=shade(sp.color,-15);
+    for(let row=0;row<2;row++) for(let col=0;col<3;col++){
+      const sx=(-6+col*5)*sc+(row%2)*2.5*sc, sy=(-2+row*4)*sc;
+      ctx.strokeStyle=scaleC;ctx.lineWidth=sc*.5;
+      ctx.beginPath();ctx.arc(sx,sy,2.5*sc,Math.PI,0);ctx.stroke();
+    }
+    // Pectoral fin
+    ctx.fillStyle=shade(sp.fin,-10);
+    ctx.beginPath();ctx.moveTo(-1*sc,-sc);ctx.lineTo(-6*sc,3*sc);ctx.lineTo(-3*sc,4*sc);ctx.closePath();ctx.fill();
+    // Dorsal fin (tall)
+    ctx.fillStyle=sp.fin;
+    ctx.beginPath();ctx.moveTo(-5*sc,-bh/2);ctx.lineTo(-8*sc,-bh/2-6*sc);ctx.lineTo(-4*sc,-bh/2-5*sc);ctx.lineTo(0,-bh/2-5*sc);ctx.lineTo(3*sc,-bh/2-3*sc);ctx.lineTo(3*sc,-bh/2);ctx.closePath();ctx.fill();
+    // Dorsal fin rays
+    ctx.strokeStyle=shade(sp.fin,-20);ctx.lineWidth=sc*.4;
+    for(let r=0;r<3;r++){const rx=(-7+r*4)*sc;ctx.beginPath();ctx.moveTo(rx,-bh/2);ctx.lineTo(rx-sc,-bh/2-4*sc);ctx.stroke();}
+    // Ventral fin
+    ctx.fillStyle=shade(sp.fin,-5);
+    ctx.beginPath();ctx.moveTo(-2*sc,bh/2);ctx.lineTo(-5*sc,bh/2+4*sc);ctx.lineTo(0,bh/2+2*sc);ctx.closePath();ctx.fill();
+    // Anal fin
+    ctx.beginPath();ctx.moveTo(2*sc,bh/2);ctx.lineTo(4*sc,bh/2+3*sc);ctx.lineTo(6*sc,bh/2);ctx.closePath();ctx.fill();
+    // Eye (detailed with highlight and pupil slit)
+    px(-5*sc,-2*sc,5*sc,5*sc,'#e8e8d0'); // sclera
+    px(-4*sc,-1*sc,4*sc,4*sc,'rgba(0,0,0,.85)'); // pupil
+    px(-4*sc,-2*sc,2*sc,1*sc,'rgba(255,255,255,.7)'); // highlight top
+    px(-3*sc,2*sc,1*sc,1*sc,'rgba(255,255,255,.35)'); // highlight bottom
+    px(-5*sc,-2*sc,5*sc,1*sc,shade(sp.color,-20)); // brow
+    // Mouth
+    px(-bw/2+sc,1*sc,3*sc,2*sc,shade(sp.color,-30));
+    px(-bw/2+2*sc,1*sc,2*sc,1*sc,shade(sp.belly,-10));
+    // Nostril dot
+    px(-bw/2+4*sc,-sc,sc,sc,shade(sp.color,-25));
+  }
+  ctx.restore();
+}
+
+// ─── VILLAGE PIXEL ART (SPACED LAYOUT) ────────────────────
+function drawVillage(W,H){
+  const GY  = H * 0.70;   // main ground line
+  const wl  = H * 0.645;  // water surface
+  // BU adapts to orientation: portrait uses height-based scaling
+  const isPortrait = H > W;
+  const BU  = isPortrait ? Math.round(Math.min(W,H) / 28) : Math.round(W / 38);
+
+  // ── ZONES ──
+  // Sea/beach:  x 0    – W*0.55
+  // Village:    x W*0.55 – W (two rows of buildings set back from shore)
+  const dockX   = isPortrait ? W * 0.08 : W * 0.30;
+  const lhX     = isPortrait ? W * 0.02 : W * 0.04;
+  const palmX   = isPortrait ? W * 0.42 : W * 0.47;
+  // Village buildings – right half, well spaced
+  // Front row (closer to shore, y = GY)
+  // Building positions adapt to portrait (more spread, smaller screen)
+  const v1X = isPortrait ? W * 0.55 : W * 0.58;  // house pescador
+  const v2X = isPortrait ? W * 0.73 : W * 0.73;  // cantina
+  const v3X = isPortrait ? W * 0.92 : W * 0.88;  // taller
+  const b1X = isPortrait ? W * 0.58 : W * 0.615; // cooperativa
+  const b2X = isPortrait ? W * 0.78 : W * 0.765; // mercado
+  const backY = GY - Math.round(BU * (isPortrait ? 2.5 : 3.2));
+
+  // ── GROUND ──
+  // Full ground fill
+  const sandG = ctx.createLinearGradient(0,GY,0,H);
+  sandG.addColorStop(0,'#e8d898'); sandG.addColorStop(0.15,'#dcc880');
+  sandG.addColorStop(0.5,'#c8a860'); sandG.addColorStop(1,'#b09050');
+  ctx.fillStyle = sandG; ctx.fillRect(0,GY,W,H-GY);
+
+  // Grass field covering right 50% of ground (village area)
+  const grassG = ctx.createLinearGradient(W*0.50,GY,W,GY+BU*3);
+  grassG.addColorStop(0,'rgba(110,185,80,0)'); grassG.addColorStop(0.15,'rgba(110,185,80,0.85)'); grassG.addColorStop(1,'rgba(85,155,60,0.9)');
+  ctx.fillStyle = grassG; ctx.fillRect(W*0.50,GY,W*0.50,H-GY);
+
+  // Grass texture patches
+  for(let i=0;i<20;i++){
+    const gx=W*(0.52+Math.sin(i*7.3)*.24+i*.024);
+    const gy=GY+4+Math.cos(i*3.7)*8;
+    const gr=6+i%4*3;
+    ctx.fillStyle=i%2===0?'#78c050':'#60a838';
+    ctx.beginPath(); ctx.ellipse(gx,gy,gr,gr*.45,0,0,Math.PI*2); ctx.fill();
+  }
+
+  // Sandy beach strip (left half)
+  px(0,GY-4,W*0.55,8,'#e8d898');
+
+  // Beach pebbles
+  const pebs=[[0.06,7,4],[0.12,5,3],[0.20,9,5],[0.28,6,4],[0.36,8,5],[0.42,5,3]];
+  for(const [xR,pw,ph] of pebs){
+    const pc=['#b8a888','#c8b898','#a89878'][Math.floor(xR*11)%3];
+    px(W*xR,GY-ph,pw,ph,pc); px(W*xR+1,GY-ph-2,pw-2,2,shade(pc,20));
+  }
+
+  // Sandy path from dock toward village (curving)
+  const pathW = Math.max(12,BU*1.4);
+  ctx.fillStyle='#dcc880';
+  ctx.beginPath();
+  ctx.moveTo(dockX+BU*4, GY);
+  ctx.quadraticCurveTo(W*0.50, GY+BU, W*0.56, GY+BU*0.5);
+  ctx.lineTo(W*0.56+pathW, GY+BU*0.5);
+  ctx.quadraticCurveTo(W*0.50+pathW, GY+BU, dockX+BU*4+pathW, GY);
+  ctx.closePath(); ctx.fill();
+
+  // ── BACKGROUND HILLS + FOREST (right side) ──
+  drawHills(W,GY);
+
+  // ── FENCE along beach edge ──
+  drawFence(W,GY,isPortrait?W*0.99:W*0.54);
+
+  // ── STREETLAMPS (only in village area) ──
+  const lampXs=[v1X+BU*2,v2X+BU*2,v3X+BU*1.5,b2X+BU*2];
+  drawLamps(lampXs,GY);
+
+  // ── TREES scattered in village (draw before buildings so buildings sit in front) ──
+  const treeSz=Math.max(14,BU*1.3);
+  const treeSpots=[
+    [W*0.545,GY-treeSz*.55,'#68c050'],
+    [v1X-BU*1.8,GY-treeSz*.5,'#78c858'],
+    [v1X+BU*5.8,GY-treeSz*.6,'#50b040'],
+    [v1X+BU*2.2,GY-treeSz*.3,'#68c858'],    // between v1 and v2
+    [v2X-BU*1.5,GY-treeSz*.55,'#60b048'],
+    [v2X+BU*6,GY-treeSz*.5,'#78c858'],
+    [v2X+BU*2.5,GY-treeSz*.35,'#50b040'],   // between v2 and v3
+    [v3X-BU*1.5,GY-treeSz*.5,'#68c050'],
+    [v3X+BU*5.2,GY-treeSz*.6,'#78c858'],
+    [b1X-BU*1.8,backY-treeSz*.65,'#60b848'],
+    [b1X+BU*6,backY-treeSz*.5,'#50b040'],
+    [b1X+BU*2.5,backY-treeSz*.4,'#78c858'],  // between b1 and b2
+    [b2X-BU*1.5,backY-treeSz*.55,'#68c050'],
+    [b2X+BU*6.5,backY-treeSz*.6,'#50b040'],
+    [W*0.96,GY-treeSz*.5,'#78c858'],
+  ];
+  for(const [tx,ty,tc] of treeSpots) drawRoundTree(tx,ty,treeSz,tc);
+
+  // ── LIGHTHOUSE (far left, on beach) ──
+  drawLighthouse(lhX,GY,W,H,BU);
+
+  // ── STORAGE AREA (near dock) ──
+  drawStorageArea(dockX+BU*5.5,GY,BU);
+
+  // ── DOCK (center-left, prominent) ──
+  drawDock(dockX,GY,H,W,BU);
+
+  // ── PALMS (transition zone between beach and village) ──
+  drawPalm(palmX,GY,W,H);
+  drawPalm(palmX+BU*2.2,GY,W,H);
+  drawPalm(palmX+BU*1.0,GY-BU*0.2,W,H);
+
+  // ── NETS (near dock) ──
+  drawNets(dockX+BU*7,GY,BU);
+
+  // ── VILLAGE BUILDINGS – right half ──
+  // Back row (slightly elevated = deeper into village)
+  drawCooperativa(b1X,backY,W,BU);
+  drawMarket(b2X,backY,W,BU);
+  // Front row
+  drawHouse(v1X,GY,BU*4.5,BU*4.2,'#f0e8d8','#c8482a','#8B5a30',W,BU,'Don Marcos');
+  drawCantina(v2X,GY,W,BU);
+  drawRepairShop(v3X,GY,W,BU);
+
+  // (seabed drawn in renderLoop before village)
+
+  // ── VILLAGERS (roam in village area right side) ──
+  for(const v of villagers){
+    v.px+=v.dir*v.speed;
+    const lb=isPortrait?W*0.04:W*0.56, rb=isPortrait?W*0.96:W*0.92;
+    if(v.px>rb)v.dir=-1; if(v.px<lb)v.dir=1;
+    const vy=H*v.yR+Math.sin(wt*2.5+v.px*0.02)*1;
+    drawVillager(v.px,vy,v.type,v.dir>0);
+  }
+
+  // Night lamp glow
+  if(G.hour>19||G.hour<6){
+    for(const lx of lampXs){
+      ctx.save(); ctx.globalAlpha=0.08; ctx.fillStyle='#ffe080';
+      ctx.beginPath(); ctx.arc(lx+8,GY-50,55,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawRoundTree(x,y,r,col){
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.12)';
+  ctx.beginPath(); ctx.ellipse(x+4,y+r*.7,r*.7,r*.3,0,0,Math.PI*2); ctx.fill();
+  // Trunk
+  const tw=Math.max(4,r*.22), th=Math.max(8,r*.55);
+  ctx.fillStyle='#a07840';
+  ctx.fillRect(x-tw/2,y+r*.1,tw,th);
+  ctx.fillStyle='#b89050';
+  ctx.fillRect(x-tw/2,y+r*.1,tw*.4,th);
+  // Main canopy (dark base)
+  ctx.fillStyle=shade(col,-18);
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  // Mid canopy
+  ctx.fillStyle=col;
+  ctx.beginPath(); ctx.arc(x-r*.1,y-r*.1,r*.85,0,Math.PI*2); ctx.fill();
+  // Highlight blobs
+  ctx.fillStyle=shade(col,22);
+  ctx.beginPath(); ctx.arc(x-r*.25,y-r*.3,r*.45,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.2,y-r*.1,r*.28,0,Math.PI*2); ctx.fill();
+  // Top sparkle
+  ctx.fillStyle=shade(col,38);
+  ctx.beginPath(); ctx.arc(x-r*.3,y-r*.42,r*.18,0,Math.PI*2); ctx.fill();
+  // Small flower accents (random by position)
+  const flr=Math.sin(x*.7+y*.3);
+  if(flr>.3){
+    ctx.fillStyle='#f0e040'; ctx.beginPath(); ctx.arc(x+r*.3,y+r*.1,r*.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f8f090'; ctx.beginPath(); ctx.arc(x+r*.3,y+r*.1,r*.05,0,Math.PI*2); ctx.fill();
+  }
+  if(flr<-.2){
+    ctx.fillStyle='#f080c0'; ctx.beginPath(); ctx.arc(x-r*.35,y+r*.05,r*.1,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawFence(W,GY,endX){
+  const s=W*0.04, fw=endX-s;
+  const posts=Math.round(fw/40), sp=fw/posts;
+  for(let i=0;i<=posts;i++){
+    const fx=s+i*sp;
+    px(fx,GY-22,5,22,'#b89868'); px(fx+1,GY-23,3,3,'#c8a878'); px(fx,GY-22,2,22,shade('#b89868',14));
+  }
+  px(s,GY-16,fw,4,'#c8a878'); px(s,GY-16,fw,1,shade('#c8a878',15));
+  px(s,GY-8,fw,3,'#d8b888'); px(s,GY-8,fw,1,shade('#d8b888',15));
+}
+
+function drawHills(W,GY){
+  // Far forest background – deep green
+  ctx.fillStyle='#3a7a30';
+  ctx.beginPath(); ctx.moveTo(W*.30,GY); ctx.lineTo(W*.38,GY-60); ctx.lineTo(W*.48,GY-35); ctx.lineTo(W*.58,GY-70); ctx.lineTo(W*.68,GY-42); ctx.lineTo(W*.76,GY-65); ctx.lineTo(W*.86,GY-30); ctx.lineTo(W*.93,GY-50); ctx.lineTo(W,GY-20); ctx.lineTo(W,GY); ctx.closePath(); ctx.fill();
+  // Mid forest – lighter green
+  ctx.fillStyle='#52a040';
+  ctx.beginPath(); ctx.moveTo(W*.34,GY); ctx.lineTo(W*.42,GY-45); ctx.lineTo(W*.52,GY-22); ctx.lineTo(W*.62,GY-52); ctx.lineTo(W*.72,GY-28); ctx.lineTo(W*.80,GY-48); ctx.lineTo(W*.90,GY-18); ctx.lineTo(W,GY-32); ctx.lineTo(W,GY); ctx.closePath(); ctx.fill();
+  // Canopy highlight blobs
+  const treeCols=['#68b850','#78c860','#58a840'];
+  const treePts=[[.36,GY-44],[.44,GY-62],[.55,GY-30],[.63,GY-56],[.72,GY-38],[.80,GY-62],[.90,GY-26],[.97,GY-44]];
+  for(let i=0;i<treePts.length;i++){
+    const [xr,ty]=treePts[i];
+    ctx.fillStyle=treeCols[i%3];
+    ctx.beginPath(); ctx.arc(W*xr,ty,20+i%3*6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#88d870';
+    ctx.beginPath(); ctx.arc(W*xr-5,ty-5,8+i%2*4,0,Math.PI*2); ctx.fill();
+  }
+  // Rocks at forest edge
+  const rocks=[[.38,GY-8],[.52,GY-4],[.65,GY-6],[.79,GY-5],[.91,GY-7]];
+  for(const [xr,ry] of rocks){
+    ctx.fillStyle='#a09080'; ctx.beginPath(); ctx.ellipse(W*xr,ry,12,7,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#c0b0a0'; ctx.beginPath(); ctx.ellipse(W*xr-2,ry-2,7,4,0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawCoral(cx,wl,color){
+  // Main trunk
+  px(cx-3,wl-22,6,22,color);
+  px(cx-1,wl-22,2,22,shade(color,25));
+  // Branches
+  ctx.strokeStyle=color; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(cx,wl-14); ctx.lineTo(cx-10,wl-22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,wl-18); ctx.lineTo(cx+9,wl-26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,wl-10); ctx.lineTo(cx-7,wl-16); ctx.stroke();
+  // Branch tips (round)
+  for(const [bx,by] of [[cx-10,wl-22],[cx+9,wl-26],[cx,wl-28],[cx-7,wl-16]]){
+    ctx.fillStyle=shade(color,20); ctx.beginPath(); ctx.arc(bx,by,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=shade(color,40); ctx.beginPath(); ctx.arc(bx-1,by-1,2,0,Math.PI*2); ctx.fill();
+  }
+  // Glow shimmer
+  ctx.save(); ctx.globalAlpha=.22; ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(cx-1,wl-20,3,0,Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.lineWidth=1;
+}
+
+function drawLamps(lampXs,GY){
+  const night=G.hour>19||G.hour<6;
+  for(const lx of lampXs){
+    px(lx,GY-48,4,48,'#404840'); px(lx+1,GY-48,2,48,shade('#404840',18));
+    px(lx,GY-46,14,3,'#404840'); px(lx+12,GY-46,3,9,'#404840');
+    px(lx+9,GY-54,10,10,'#808870'); px(lx+9,GY-55,10,3,shade('#808870',20));
+    px(lx+9,GY-45,10,2,'#606860');
+    if(night){ctx.save();ctx.globalAlpha=.9;ctx.fillStyle='#ffe090';ctx.fillRect(lx+11,GY-52,6,6);ctx.restore();}
+    else px(lx+11,GY-52,6,6,'#c0c0a0');
+  }
+}
+
+function drawNets(nx,GY,BU){
+  const span=BU*2.5;
+  px(nx,GY-BU*3.5,4,BU*3.5,'#7d5418'); px(nx+span,GY-BU*3,4,BU*3,'#7d5418');
+  ctx.strokeStyle='rgba(180,160,100,.6)'; ctx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    ctx.beginPath(); ctx.moveTo(nx+4,GY-BU*3.4+i*BU*0.5); ctx.lineTo(nx+span,GY-BU*2.9+i*BU*0.4); ctx.stroke();
+  }
+  for(let j=0;j<8;j++){
+    const jx=nx+4+j*(span/8);
+    ctx.beginPath(); ctx.moveTo(jx,GY-BU*3.4); ctx.lineTo(jx,GY-BU*0.8); ctx.stroke();
+  }
+  for(let j=0;j<5;j++){
+    const fx=nx+4+j*(span/4.5);
+    px(fx,GY-BU*3.5,5,4,'#e04030'); px(fx+1,GY-BU*3.5,3,2,shade('#e04030',20));
+  }
+}
+
+function drawStorageArea(bx,GY,BU){
+  const cw=Math.max(14,Math.round(BU*1.1)), ch=Math.max(10,Math.round(BU*0.9));
+  for(let stack=0;stack<2;stack++){
+    for(let col=0;col<3;col++){
+      const cx=bx+col*(cw+3), cy=GY-ch-stack*(ch+1);
+      px(cx,cy,cw,ch,'#8B5A1A'); px(cx+1,cy+1,cw-2,ch-2,shade('#8B5A1A',18));
+      px(cx,cy+Math.floor(ch*.35),cw,2,'rgba(0,0,0,.2)'); px(cx,cy+Math.floor(ch*.7),cw,2,'rgba(0,0,0,.2)');
+      px(cx+Math.floor(cw*.4),cy,2,ch,'rgba(0,0,0,.2)');
+      if(stack===1){px(cx+2,cy+2,cw-4,4,'#a8d8e8'); px(cx+3,cy+3,6,2,'#7fc5a8');}
+    }
+  }
+  const brlBase=bx+(cw+3)*3+BU*0.4;
+  for(let b=0;b<2;b++){
+    const brl=brlBase+b*(BU*1.3), bry=GY-BU*1.5;
+    const bw=Math.max(12,Math.round(BU*0.9)), bh=Math.max(18,Math.round(BU*1.3));
+    px(brl,bry,bw,bh,'#6B3A1A'); px(brl+1,bry+1,bw-2,bh-2,shade('#6B3A1A',20));
+    for(let s=0;s<3;s++) px(brl,bry+Math.floor(bh*(0.2+s*0.25)),bw,3,'#8B5020');
+    px(brl-1,bry-2,bw+2,4,'#a07030');
+  }
+}
+
+function drawWin(wx,wy,ww,wh){
+  ww=ww||16; wh=wh||13;
+  const night=G.hour>19||G.hour<6;
+  px(wx,wy,ww,wh,night?'#ffe0a0':'#aed6f1');
+  px(wx,wy,ww,1,'#7a9ab0'); px(wx,wy+wh-1,ww,1,'#7a9ab0');
+  px(wx,wy,1,wh,'#7a9ab0'); px(wx+ww-1,wy,1,wh,'#7a9ab0');
+  px(wx+Math.floor(ww/2)-1,wy,2,wh,'#6a8aaa'); px(wx,wy+Math.floor(wh/2)-1,ww,2,'#6a8aaa');
+  if(night){ctx.save();ctx.globalAlpha=.18;ctx.fillStyle='#ffe080';ctx.fillRect(wx-5,wy-5,ww+10,wh+10);ctx.restore();}
+}
+
+function drawHouse(x,GY,w,h,wall,roof,wood,W,BU,label){
+  w=Math.round(w); h=Math.round(h);
+  const S=Math.max(1,Math.round(BU/6)); // pixel size unit
+
+  // ── SHADOW ──
+  ctx.fillStyle='rgba(0,0,0,.18)';
+  ctx.fillRect(x+S*2,GY-h+S*2,w,h);
+
+  // ── LOWER HALF: stone/brick rubble ──
+  const lh=Math.round(h*0.48);
+  const stoneColors=['#7a5040','#8a6050','#6a4030','#9a7060','#5a3820'];
+  // Base stone fill
+  px(x,GY-lh,w,lh,'#8a5a3a');
+  // Stone blocks (irregular pixel pattern)
+  const blockRows=4, blockH=Math.max(4,Math.round(lh/blockRows));
+  for(let row=0;row<blockRows;row++){
+    const by=GY-lh+row*blockH;
+    const offset=row%2?S*3:0;
+    const blockW=Math.max(8,Math.round(w/(3+row%2)));
+    for(let col=0;col<Math.ceil(w/blockW)+1;col++){
+      const bx=x+col*blockW+offset;
+      const c=stoneColors[(col+row*3)%stoneColors.length];
+      if(bx<x+w){
+        px(bx,by,Math.min(blockW-S,w-(bx-x)),blockH-S,c);
+        // Mortar highlight top
+        px(bx,by,Math.min(blockW-S,w-(bx-x)),S,shade(c,20));
+        // Mortar right shadow
+        px(bx+Math.min(blockW-S,w-(bx-x))-S,by,S,blockH-S,shade(c,-25));
+      }
+    }
+  }
+  // Stone highlight on left edge
+  px(x,GY-lh,S*2,lh,shade('#8a5a3a',18));
+  // Stone bottom highlight (base)
+  px(x,GY-S*2,w,S*2,'#604028');
+
+  // Ivy/vines on stone corners
+  function drawIvy(ix,iy,dir){
+    for(let v=0;v<6;v++){
+      const vx=ix+dir*(v%2)*S*2, vy=iy-v*S*4;
+      if(vy<GY-lh) break;
+      ctx.fillStyle=['#2d7a30','#3d8a40','#258520'][v%3];
+      ctx.beginPath(); ctx.arc(vx,vy,S*2.5,0,Math.PI*2); ctx.fill();
+      // Leaf detail
+      ctx.fillStyle='#4aaa4a';
+      ctx.beginPath(); ctx.arc(vx+dir*S,vy-S,S*1.2,0,Math.PI*2); ctx.fill();
+    }
+  }
+  drawIvy(x+S,GY-S*2,-1); // left corner
+  drawIvy(x+w-S,GY-S*2,1); // right corner
+
+  // ── UPPER HALF: wooden planks ──
+  const uh=h-lh;
+  const plankW=w-S*2;
+  px(x+S,GY-h,plankW,uh,'#c8ccd8'); // base grey-blue
+  // Horizontal plank lines
+  const plankH=Math.max(3,S*3);
+  for(let p=0;p<Math.floor(uh/plankH);p++){
+    px(x+S,GY-h+p*plankH,plankW,plankH-1,p%2?'#b8bcc8':'#c8ccd8');
+    px(x+S,GY-h+p*plankH,plankW,1,'#a8acb8'); // shadow between planks
+  }
+  // Wood frame borders
+  px(x,GY-h,S*2,h,'#5a3820');      // left frame
+  px(x+w-S*2,GY-h,S*2,h,'#5a3820'); // right frame
+  px(x,GY-lh-S,w,S*2,'#5a3820');    // floor divider beam
+
+  // ── PROTRUDING UPPER WINDOW (dormer) ──
+  const dw=Math.round(w*0.5), dh=Math.round(uh*0.6);
+  const dx=x+Math.round((w-dw)/2);
+  const dy=GY-h+S*2;
+  // Window box protrusion
+  px(dx-S,dy,dw+S*2,dh,'#5a3820'); // frame
+  px(dx,dy+S,dw,dh-S*2,'#1a2030'); // dark glass
+  // Window cross bars
+  px(dx,dy+S+Math.round(dh/2),dw,S*2,'#5a3820');
+  px(dx+Math.round(dw/2)-S,dy+S,S*2,dh-S*2,'#5a3820');
+  // Flower box below dormer window
+  px(dx-S*2,dy+dh,dw+S*4,S*3,'#5a3820');
+  for(let f=0;f<Math.round(dw/S/4);f++){
+    ctx.fillStyle=['#2d8a30','#358a38','#289028'][f%3];
+    ctx.beginPath(); ctx.arc(dx+f*S*4+S*2,dy+dh-S,S*2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#50c050';
+    ctx.beginPath(); ctx.arc(dx+f*S*4+S*2-S,dy+dh-S*2,S*1.2,0,Math.PI*2); ctx.fill();
+  }
+  // Window reflection glint
+  ctx.fillStyle='rgba(255,255,255,.18)';
+  ctx.fillRect(dx+S,dy+S*2,Math.round(dw*0.35),Math.round((dh-S*2)*0.4));
+
+  // ── SIDE WINDOWS (lower upper half) ──
+  const swW=Math.max(S*5,Math.round(w*0.18)), swH=Math.max(S*5,Math.round(uh*0.28));
+  const swY=GY-lh-swH-S*4;
+  // Left window
+  px(x+S*4,swY,swW,swH,'#5a3820');
+  px(x+S*5,swY+S,swW-S*2,swH-S*2,'#1a2030');
+  px(x+S*4,swY+Math.round(swH/2),swW,S,'#5a3820');
+  // Right window
+  px(x+w-S*4-swW,swY,swW,swH,'#5a3820');
+  px(x+w-S*3-swW,swY+S,swW-S*2,swH-S*2,'#1a2030');
+  px(x+w-S*4-swW,swY+Math.round(swH/2),swW,S,'#5a3820');
+  // Window glow at night
+  if(G.hour>19||G.hour<6){
+    ctx.save();ctx.globalAlpha=0.25;ctx.fillStyle='#ffe090';
+    ctx.fillRect(x+S*5,swY+S,swW-S*2,swH-S*2);
+    ctx.fillRect(x+w-S*3-swW,swY+S,swW-S*2,swH-S*2);
+    ctx.restore();
+  }
+
+  // ── STEEP ROOF ──
+  const roofH=Math.round(h*0.52);
+  const roofOvhg=S*3;
+  // Roof base (underside visible)
+  ctx.fillStyle='#3a3020';
+  ctx.beginPath();
+  ctx.moveTo(x-roofOvhg,GY-h);
+  ctx.lineTo(x+w/2,GY-h-roofH);
+  ctx.lineTo(x+w+roofOvhg,GY-h);
+  ctx.closePath(); ctx.fill();
+  // Main roof (dark blue-grey tiles)
+  ctx.fillStyle='#3a4858';
+  ctx.beginPath();
+  ctx.moveTo(x-roofOvhg+S,GY-h-S);
+  ctx.lineTo(x+w/2,GY-h-roofH+S);
+  ctx.lineTo(x+w+roofOvhg-S,GY-h-S);
+  ctx.closePath(); ctx.fill();
+  // Tile rows (overlapping semicircles)
+  const tileRows=6;
+  for(let r=0;r<tileRows;r++){
+    const progress=r/tileRows;
+    const ty=GY-h-S + progress*(-roofH+S*2);
+    const rowW=(w+roofOvhg*2-S*2)*(1-progress);
+    const rx=x-roofOvhg+S+(w+roofOvhg*2-S*2)*progress*0.5;
+    const tileSize=Math.max(S*3,Math.round(rowW/8));
+    for(let t=0;t<Math.ceil(rowW/tileSize)+1;t++){
+      const tx=rx+t*tileSize;
+      if(tx>x+w+roofOvhg) break;
+      ctx.fillStyle=t%2?'#3a4858':'#304050';
+      ctx.beginPath(); ctx.arc(tx,ty,tileSize*0.55,Math.PI,0); ctx.fill();
+      ctx.fillStyle='#28384a';
+      ctx.fillRect(tx-tileSize*0.55,ty,tileSize*1.1,S);
+    }
+  }
+  // Roof ridge
+  px(x+Math.round(w/2)-S,GY-h-roofH,S*2,roofH,'#2a3040');
+  px(x+Math.round(w/2)-S,GY-h-roofH-S*2,S*4,S*3,'#4a5a6a');
+  // Roof left highlight
+  ctx.save();ctx.globalAlpha=0.12;ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.moveTo(x-roofOvhg+S*2,GY-h-S*2);
+  ctx.lineTo(x+w/2-S,GY-h-roofH+S*3);
+  ctx.lineTo(x+w/2+S*5,GY-h-roofH+S*8);
+  ctx.lineTo(x+S*4,GY-h-S*2);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+
+  // ── CHIMNEY ──
+  const chX=x+Math.round(w*0.68), chW=Math.max(S*3,Math.round(BU*0.45));
+  const chTop=GY-h-roofH+Math.round(roofH*0.2);
+  // Chimney body (sticking through roof)
+  px(chX,chTop,chW,GY-h-chTop+S*4,'#6a3828');
+  px(chX,chTop,S,GY-h-chTop+S*4,shade('#6a3828',15)); // light side
+  // Chimney cap
+  px(chX-S,chTop-S*2,chW+S*2,S*3,'#4a2818');
+  // Smoke animation
+  if(G.hour<9||G.hour>18){
+    for(let i=0;i<5;i++){
+      const sy=chTop-S*4-i*S*5+Math.sin(wt*0.6+i)*S*3;
+      ctx.fillStyle=`rgba(200,195,185,${(0.45-i*0.08)*(0.5+0.5*Math.sin(wt*0.4+i))})`;
+      ctx.beginPath(); ctx.arc(chX+chW/2+Math.sin(wt*0.3+i)*S*4,sy,S*(2.5+i*0.8),0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ── ARCHED DOOR ──
+  const doorW=Math.max(S*5,Math.round(w*0.28)), doorH=Math.round(lh*0.78);
+  const doorX=x+Math.round((w-doorW)/2);
+  const doorY=GY-doorH;
+  // Door frame
+  px(doorX-S,doorY-S,doorW+S*2,doorH+S,'#3a2010');
+  // Door arch top
+  ctx.fillStyle='#3a2010';
+  ctx.beginPath(); ctx.arc(doorX+doorW/2,doorY,doorW/2+S,Math.PI,0); ctx.fill();
+  // Door panels
+  px(doorX,doorY,doorW,doorH,'#4a2a10');
+  // Left panel
+  px(doorX+S,doorY+S*2,Math.round(doorW/2)-S*2,doorH-S*4,'#3a2010');
+  // Right panel (slightly open look)
+  px(doorX+Math.round(doorW/2)+S,doorY+S*2,Math.round(doorW/2)-S*2,doorH-S*4,'#3a2010');
+  // Door knob
+  ctx.fillStyle='#c8a040';
+  ctx.beginPath(); ctx.arc(doorX+doorW-S*3,GY-Math.round(doorH*0.45),S*1.5,0,Math.PI*2); ctx.fill();
+  // Arch glow
+  ctx.fillStyle='rgba(255,255,255,.07)';
+  ctx.beginPath(); ctx.arc(doorX+doorW/2,doorY,doorW/2-S*2,Math.PI,0); ctx.fill();
+
+  // ── HANGING SIGN ──
+  const sigX=x+w+S*2, sigY=GY-lh-S*10;
+  // Chain
+  for(let c=0;c<4;c++) px(sigX+S,sigY+c*S*3,S*2,S*2,'#8a7840');
+  // Sign board
+  px(sigX,sigY+S*12,S*9,S*8,'#7a5020');
+  px(sigX+S,sigY+S*13,S*7,S*6,'#6a4018');
+  // Fish icon on sign (pixel)
+  px(sigX+S*2,sigY+S*15,S*3,S*2,'#c8a850');
+  px(sigX+S*4,sigY+S*14,S*2,S*4,'#c8a850');
+  px(sigX+S*5,sigY+S*13,S,S,'#c8a850');
+
+  // ── LABEL ──
+  if(label){
+    ctx.font=`bold ${Math.max(4,Math.round(W*.0055))}px 'Press Start 2P',monospace`;
+    ctx.textAlign='center';
+    // Small sign above door
+    const lblW=ctx.measureText(label).width+S*6;
+    px(x+w/2-lblW/2,GY-lh-S*14,lblW,S*8,'#3a2010');
+    ctx.fillStyle='#f0d080';
+    ctx.fillText(label,x+w/2,GY-lh-S*8);
+  }
+}
+
+
+function drawCooperativa(x,GY,W,BU){
+  const w=Math.round(BU*5), h=Math.round(BU*4.4);
+  const S=Math.max(1,Math.round(BU/6));
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x+S*2,GY-h+S*2,w,h);
+
+  // Lower stone half
+  const lh=Math.round(h*0.45);
+  const stoneC=['#7a5a48','#8a6a58','#6a4a38'];
+  px(x,GY-lh,w,lh,'#8a6a50');
+  const blockH=Math.max(4,Math.round(lh/4));
+  for(let row=0;row<4;row++){
+    const by=GY-lh+row*blockH, off=row%2?S*4:0;
+    const bw=Math.max(10,Math.round(w/4));
+    for(let col=0;col<Math.ceil(w/bw)+1;col++){
+      const bx=x+col*bw+off, c=stoneC[(col+row)%3];
+      if(bx<x+w){ px(bx,by,Math.min(bw-S,w-(bx-x)),blockH-S,c); px(bx,by,Math.min(bw-S,w-(bx-x)),S,shade(c,18)); }
+    }
+  }
+  px(x,GY-S*2,w,S*2,'#5a3a28');
+
+  // Upper wood planks (slightly warmer tone)
+  const uh=h-lh;
+  px(x+S,GY-h,w-S*2,uh,'#b8bcc0');
+  const plankH=Math.max(3,S*3);
+  for(let p=0;p<Math.floor(uh/plankH);p++){
+    px(x+S,GY-h+p*plankH,w-S*2,plankH-1,p%2?'#a8acb0':'#b8bcc0');
+    px(x+S,GY-h+p*plankH,w-S*2,1,'#989ca0');
+  }
+
+  // Frames
+  px(x,GY-h,S*2,h,'#4a3018'); px(x+w-S*2,GY-h,S*2,h,'#4a3018');
+  px(x,GY-lh-S,w,S*2,'#4a3018');
+
+  // Flat parapet roof (cooperativa is official = flat top)
+  const parH=Math.round(S*5);
+  px(x-S*2,GY-h-parH,w+S*4,parH,'#3a4858'); // dark blue parapet
+  px(x-S*2,GY-h-parH,w+S*4,S,'#4a5a6a');    // top highlight
+  // Parapet teeth
+  const toothW=S*5, toothH=S*4;
+  for(let t=0;t<Math.floor((w+S*4)/toothW/2);t++){
+    px(x-S*2+t*toothW*2,GY-h-parH-toothH,toothW-S,toothH,'#3a4858');
+    px(x-S*2+t*toothW*2,GY-h-parH-toothH,toothW-S,S,'#4a5a6a');
+  }
+
+  // Windows upper (2)
+  const ww=Math.max(S*5,Math.round(w*0.18)), wh=Math.max(S*5,Math.round(uh*0.38));
+  const wY=GY-h+S*3;
+  [[x+S*4,wY],[x+w-ww-S*4,wY],[x+Math.round(w/2)-Math.round(ww/2),wY]].forEach(([wx,wy])=>{
+    px(wx,wy,ww,wh,'#4a3018');
+    px(wx+S,wy+S,ww-S*2,wh-S*2,'#1a2030');
+    px(wx,wy+Math.round(wh/2),ww,S,'#4a3018');
+    if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh-S*2);ctx.restore();}
+  });
+
+  // Large double door
+  const dw=Math.round(w*0.35), doorH=Math.round(lh*0.8);
+  const doorX=x+Math.round((w-dw)/2);
+  px(doorX-S,GY-doorH-S,dw+S*2,doorH+S,'#3a2010');
+  px(doorX,GY-doorH,Math.round(dw/2)-S,doorH,'#4a2a10');
+  px(doorX+Math.round(dw/2)+S,GY-doorH,Math.round(dw/2)-S,doorH,'#4a2a10');
+  px(doorX+Math.round(dw/2)-S,GY-doorH,S*2,doorH,'#3a2010');
+  ctx.fillStyle='#4a3018';
+  ctx.beginPath();ctx.arc(doorX+dw/2,GY-doorH,dw/2+S,Math.PI,0);ctx.fill();
+
+  // Sign banner
+  const signH=Math.round(S*7);
+  px(x+S*3,GY-lh-signH-S*3,w-S*6,signH,'#3a2010');
+  ctx.fillStyle='#f0d080';
+  ctx.font=`bold ${Math.max(4,Math.round(W*.0048))}px 'Press Start 2P',monospace`;
+  ctx.textAlign='center'; ctx.fillText('COOPERATIVA',x+w/2,GY-lh-S*3-2);
+
+  // Ivy corners
+  for(let v=0;v<5;v++){
+    const vx=x+S+v%2*S*2, vy=GY-lh*0.2-v*S*5;
+    ctx.fillStyle=['#2d7a30','#3d8a40','#258520'][v%3];
+    ctx.beginPath();ctx.arc(vx,vy,S*2,0,Math.PI*2);ctx.fill();
+  }
+}
+
+
+function drawCantina(x,GY,W,BU){
+  const w=Math.round(BU*4.8), h=Math.round(BU*4.2);
+  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(x+5,GY-h+5,w,h);
+  px(x,GY-h,w,h,'#f5f0e0'); px(x+w-Math.round(BU*.6),GY-h,Math.round(BU*.6),h,shade('#f5f0e0',-12));
+  for(let b=0;b<Math.floor(h/10);b++) px(x,GY-h+b*10,w,1,shade('#f5f0e0',-5));
+  const peak=Math.round(BU*2);
+  ctx.fillStyle='#c8482a';
+  ctx.beginPath(); ctx.moveTo(x-5,GY-h); ctx.lineTo(x+w*.5,GY-h-peak); ctx.lineTo(x+w+5,GY-h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=shade('#c8482a',-20);
+  ctx.beginPath(); ctx.moveTo(x+w*.5,GY-h-peak); ctx.lineTo(x+w+5,GY-h); ctx.lineTo(x+w*.5+5,GY-h); ctx.closePath(); ctx.fill();
+  const tw=Math.max(7,Math.round(BU*.55)), th=Math.max(4,Math.round(BU*.35));
+  for(let row=0;row<3;row++) for(let col=0;col<Math.floor(w/tw);col++)
+    px(x+col*tw+(row%2)*Math.floor(tw/2),GY-h+row*th*2,tw-1,th,row%2?'#a83820':'#c8482a');
+  const chX=x+Math.round(w*.2), chH=Math.round(BU*1.3);
+  px(chX,GY-h-chH,Math.round(BU*.6),chH,'#806040'); px(chX-2,GY-h-chH-3,Math.round(BU*.6)+4,4,shade('#806040',-15));
+  if(G.hour>17||G.hour<10){
+    for(let i=0;i<4;i++){const sy=GY-h-chH-5-i*9+Math.sin(wt*.6+i)*5;
+      ctx.fillStyle=`rgba(160,150,130,${(.5-i*.11)*(.5+.5*Math.sin(wt*.4+i))})`;
+      ctx.beginPath();ctx.arc(chX+Math.round(BU*.3)+Math.sin(wt*.3+i)*5,sy,3+i*2.5,0,Math.PI*2);ctx.fill();}
+  }
+  const porchH=Math.max(8,Math.round(BU*.65));
+  px(x-4,GY-porchH,w+8,porchH,'#c8b890');
+  const numP=Math.max(3,Math.round(w/Math.round(BU*1.1)));
+  for(let p=0;p<numP;p++) px(x+Math.round(p*(w/(numP-1))),GY-Math.round(BU*2),Math.max(5,Math.round(BU*.35)),Math.round(BU*2),'#d4a030');
+  const dw=Math.max(12,Math.round(BU*.9)), dh=Math.round(BU*2);
+  px(x+w*.5-dw/2,GY-dh,dw,dh,'#5a3010');
+  ctx.fillStyle=shade('#5a3010',20); ctx.beginPath(); ctx.arc(x+w*.5,GY-dh,Math.round(dw*.5),Math.PI,0); ctx.fill();
+  px(x+w*.5+Math.round(dw*.35),GY-Math.round(dh*.6),3,3,'#c8a040');
+  const ww=Math.max(12,Math.round(BU*.9)), wh=Math.max(10,Math.round(BU*.75));
+  drawWin(x+Math.round(BU*.35),GY-h+Math.round(BU*.8),ww,wh);
+  drawWin(x+w-ww-Math.round(BU*.35),GY-h+Math.round(BU*.8),ww,wh);
+  px(x+Math.round(BU*.35),GY-h-12,w-Math.round(BU*.7),11,'#5a3010');
+  ctx.fillStyle='#f0d890';
+  ctx.font=`bold ${Math.max(4,Math.round(W*.0055))}px 'Press Start 2P',monospace`;
+  ctx.textAlign='center'; ctx.fillText('LA CANTINA',x+w/2,GY-h-4);
+}
+
+function drawMarket(x,GY,W,BU){
+  const w=Math.round(BU*5.5), h=Math.round(BU*4.6);
+  const S=Math.max(1,Math.round(BU/6));
+
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x+S*2,GY-h+S*2,w,h);
+
+  const lh=Math.round(h*0.46);
+  const stC=['#6a5040','#7a6050','#5a4030'];
+  px(x,GY-lh,w,lh,'#7a5a48');
+  const bH=Math.max(4,Math.round(lh/4));
+  for(let row=0;row<4;row++){
+    const by=GY-lh+row*bH, off=row%2?S*5:0, bw=Math.round(w/5);
+    for(let col=0;col<Math.ceil(w/bw)+1;col++){
+      const bx=x+col*bw+off, c=stC[(col+row)%3];
+      if(bx<x+w){ px(bx,by,Math.min(bw-S,w-(bx-x)),bH-S,c); px(bx,by,Math.min(bw-S,w-(bx-x)),S,shade(c,18)); }
+    }
+  }
+  px(x,GY-S*2,w,S*2,'#4a3020');
+
+  const uh=h-lh;
+  px(x+S,GY-h,w-S*2,uh,'#c0bcc0');
+  const pH=Math.max(3,S*3);
+  for(let p=0;p<Math.floor(uh/pH);p++){
+    px(x+S,GY-h+p*pH,w-S*2,pH-1,p%2?'#b0acb8':'#c0bcc0');
+    px(x+S,GY-h+p*pH,w-S*2,1,'#a09cb0');
+  }
+  px(x,GY-h,S*2,h,'#4a3018'); px(x+w-S*2,GY-h,S*2,h,'#4a3018');
+  px(x,GY-lh-S,w,S*2,'#4a3018');
+
+  // Roof (steep, dark tiles)
+  const rH=Math.round(h*0.5), ov=S*4;
+  ctx.fillStyle='#2a3040'; ctx.beginPath();ctx.moveTo(x-ov,GY-h);ctx.lineTo(x+w/2,GY-h-rH);ctx.lineTo(x+w+ov,GY-h);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#384858'; ctx.beginPath();ctx.moveTo(x-ov+S,GY-h-S);ctx.lineTo(x+w/2,GY-h-rH+S);ctx.lineTo(x+w+ov-S,GY-h-S);ctx.closePath();ctx.fill();
+  for(let r=0;r<6;r++){
+    const pct=r/6, ty=GY-h-S+pct*(-rH+S), rw=(w+ov*2)*(1-pct), rx=x-ov+(w+ov*2)*pct*0.5;
+    const tsz=Math.max(S*2,Math.round(rw/9));
+    for(let t=0;t<Math.ceil(rw/tsz)+1;t++){
+      ctx.fillStyle=t%2?'#384858':'#2a3848';
+      ctx.beginPath();ctx.arc(rx+t*tsz,ty,tsz*0.55,Math.PI,0);ctx.fill();
+      px(rx+t*tsz-tsz*0.55,ty,tsz*1.1,S,'#1a2838');
+    }
+  }
+  px(x+Math.round(w/2)-S,GY-h-rH,S*2,rH,'#202830');
+  // Chimney
+  const chX=x+Math.round(w*0.7), chW=Math.max(S*3,Math.round(BU*0.4));
+  const chTop=GY-h-rH+Math.round(rH*0.25);
+  px(chX,chTop,chW,GY-h-chTop+S*3,'#6a3828'); px(chX-S,chTop-S*2,chW+S*2,S*3,'#4a2818');
+  if(G.hour<9||G.hour>18){
+    for(let i=0;i<4;i++){const sy=chTop-S*3-i*S*5+Math.sin(wt*0.6+i)*S*2;
+      ctx.fillStyle=`rgba(195,190,180,${(0.4-i*0.08)*(.5+.5*Math.sin(wt*.4+i))})`;
+      ctx.beginPath();ctx.arc(chX+chW/2+Math.sin(wt*.3+i)*S*3,sy,S*(2+i*.7),0,Math.PI*2);ctx.fill();}
+  }
+
+  // Red striped awning at stone/wood boundary
+  const awY=GY-lh, awH=Math.round(S*5);
+  ctx.fillStyle='#b03020';
+  ctx.beginPath();ctx.moveTo(x-S,awY);ctx.lineTo(x+w+S,awY);ctx.lineTo(x+w+S*3,awY+awH);ctx.lineTo(x-S*3,awY+awH);ctx.closePath();ctx.fill();
+  for(let i=0;i<Math.round(w/S/6);i++){
+    ctx.fillStyle='rgba(255,255,255,.22)';
+    ctx.beginPath();ctx.moveTo(x+i*S*6,awY);ctx.lineTo(x+(i+1)*S*6,awY);ctx.lineTo(x+(i+1)*S*6+S*2,awY+awH);ctx.lineTo(x+i*S*6+S*2,awY+awH);ctx.closePath();ctx.fill();
+  }
+  for(let f=0;f<Math.round(w/S/5);f++){ px(x+f*S*5,awY+awH,S*3,S*3,'#b03020'); px(x+f*S*5+S*3,awY+awH,S*2,S*2,'#f0f0f0'); }
+
+  // Upper windows
+  const ww=Math.max(S*5,Math.round(w*0.16)), wh2=Math.max(S*5,Math.round(uh*0.35));
+  [[x+S*4,GY-h+S*3],[x+w-ww-S*4,GY-h+S*3]].forEach(([wx,wy])=>{
+    px(wx,wy,ww,wh2,'#4a3018'); px(wx+S,wy+S,ww-S*2,wh2-S*2,'#1a2030');
+    px(wx,wy+Math.round(wh2/2),ww,S,'#4a3018');
+    if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh2-S*2);ctx.restore();}
+  });
+
+  // Double door
+  const dw2=Math.round(w*0.32), dH2=Math.round(lh*0.78), dX=x+Math.round((w-dw2)/2);
+  px(dX-S,GY-dH2-S,dw2+S*2,dH2+S,'#3a2010');
+  px(dX,GY-dH2,Math.round(dw2/2)-S,dH2,'#4a2a10');
+  px(dX+Math.round(dw2/2)+S,GY-dH2,Math.round(dw2/2)-S,dH2,'#4a2a10');
+  ctx.fillStyle='#3a2010'; ctx.beginPath();ctx.arc(dX+dw2/2,GY-dH2,dw2/2+S,Math.PI,0);ctx.fill();
+  px(dX+dw2/2-S,GY-dH2-S,S*2,dH2,'#3a2010');
+  ctx.fillStyle='#c8a040'; ctx.beginPath();ctx.arc(dX+dw2-S*4,GY-Math.round(dH2*0.45),S*1.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#c8a040'; ctx.beginPath();ctx.arc(dX+S*4,GY-Math.round(dH2*0.45),S*1.5,0,Math.PI*2);ctx.fill();
+
+  // Sign above awning
+  px(x+S*3,GY-lh-awH-S*8,w-S*6,S*7,'#3a2010');
+  ctx.fillStyle='#f1c40f';
+  ctx.font=`bold ${Math.max(4,Math.round(W*.006))}px 'Press Start 2P',monospace`;
+  ctx.textAlign='center'; ctx.fillText('MERCADO',x+w/2,GY-lh-awH-S*2);
+}
+
+
+function drawRepairShop(x,GY,W,BU){
+  const w=Math.round(BU*4.3), h=Math.round(BU*4);
+  const S=Math.max(1,Math.round(BU/6));
+
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x+S*2,GY-h+S*2,w,h);
+
+  const lh=Math.round(h*0.44);
+  // Stone lower (darker, more worn)
+  const stC=['#606050','#706860','#504840'];
+  px(x,GY-lh,w,lh,'#686858');
+  const bH=Math.max(4,Math.round(lh/4));
+  for(let row=0;row<4;row++){
+    const by=GY-lh+row*bH, off=row%2?S*3:0;
+    const bw=Math.round(w/4);
+    for(let col=0;col<Math.ceil(w/bw)+1;col++){
+      const bx=x+col*bw+off, c=stC[(col+row)%3];
+      if(bx<x+w){ px(bx,by,Math.min(bw-S,w-(bx-x)),bH-S,c); px(bx,by,Math.min(bw-S,w-(bx-x)),S,shade(c,16)); }
+    }
+  }
+  px(x,GY-S*2,w,S*2,'#404030');
+
+  // Wood upper (slightly greenish-grey, weathered)
+  const uh=h-lh;
+  px(x+S,GY-h,w-S*2,uh,'#a0a898');
+  const pH=Math.max(3,S*3);
+  for(let p=0;p<Math.floor(uh/pH);p++){
+    px(x+S,GY-h+p*pH,w-S*2,pH-1,p%2?'#909888':'#a0a898');
+    px(x+S,GY-h+p*pH,w-S*2,1,'#808878');
+  }
+  px(x,GY-h,S*2,h,'#404828'); px(x+w-S*2,GY-h,S*2,h,'#404828');
+  px(x,GY-lh-S,w,S*2,'#404828');
+
+  // Roof (same dark tiles)
+  const rH=Math.round(h*0.48), ov=S*3;
+  ctx.fillStyle='#282e38'; ctx.beginPath();ctx.moveTo(x-ov,GY-h);ctx.lineTo(x+w/2,GY-h-rH);ctx.lineTo(x+w+ov,GY-h);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#343e4a'; ctx.beginPath();ctx.moveTo(x-ov+S,GY-h-S);ctx.lineTo(x+w/2,GY-h-rH+S);ctx.lineTo(x+w+ov-S,GY-h-S);ctx.closePath();ctx.fill();
+  for(let r=0;r<5;r++){
+    const pct=r/5, ty=GY-h-S+pct*(-rH+S), rw=(w+ov*2)*(1-pct), rx=x-ov+(w+ov*2)*pct*0.5;
+    const tsz=Math.max(S*2,Math.round(rw/8));
+    for(let t=0;t<Math.ceil(rw/tsz)+1;t++){
+      ctx.fillStyle=t%2?'#343e4a':'#283038';
+      ctx.beginPath();ctx.arc(rx+t*tsz,ty,tsz*0.55,Math.PI,0);ctx.fill();
+      px(rx+t*tsz-tsz*0.55,ty,tsz*1.1,S,'#18202a');
+    }
+  }
+  px(x+Math.round(w/2)-S,GY-h-rH,S*2,rH,'#18202a');
+
+  // Large garage door (rolling metal style)
+  const gdW=Math.round(w*0.58), gdH=Math.round(lh*0.8);
+  const gdX=x+Math.round((w-gdW)/2);
+  px(gdX-S,GY-gdH-S,gdW+S*2,gdH+S,'#3a3828');
+  for(let p=0;p<6;p++){
+    px(gdX,GY-gdH+p*Math.round(gdH/6),gdW,Math.round(gdH/6)-S,p%2?'#555548':'#606058');
+    px(gdX,GY-gdH+p*Math.round(gdH/6),gdW,S,'#3a3828');
+  }
+  // Handle
+  px(gdX+Math.round(gdW/2)-S*3,GY-Math.round(gdH*0.25),S*6,S*2,'#888878');
+
+  // Side window
+  const ww=Math.max(S*4,Math.round(w*0.2)), wh2=Math.max(S*4,Math.round(uh*0.35));
+  const winX=x+w-ww-S*4, winY=GY-h+S*4;
+  px(winX,winY,ww,wh2,'#404828'); px(winX+S,winY+S,ww-S*2,wh2-S*2,'#1a2020');
+  px(winX,winY+Math.round(wh2/2),ww,S,'#404828'); px(winX+Math.round(ww/2),winY,S,wh2,'#404828');
+  if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.2;ctx.fillStyle='#ffe090';ctx.fillRect(winX+S,winY+S,ww-S*2,wh2-S*2);ctx.restore();}
+
+  // Sign
+  px(x+S*2,GY-lh-S*8,w-S*4,S*7,'#282e20');
+  ctx.fillStyle='#a0c8a0';
+  ctx.font=`bold ${Math.max(4,Math.round(W*.0048))}px 'Press Start 2P',monospace`;
+  ctx.textAlign='center'; ctx.fillText('TALLER',x+w/2,GY-lh-S*2);
+
+  // Anchor/gear prop (from before)
+  const ax=x-Math.round(BU*1.1), ay=GY-Math.round(BU*2);
+  ctx.strokeStyle='#606878'; ctx.lineWidth=Math.max(2,S*1.5);
+  ctx.beginPath();ctx.arc(ax,ay,Math.round(BU*.5),0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ax,ay-Math.round(BU*.5));ctx.lineTo(ax,ay+Math.round(BU*.5));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ax-Math.round(BU*.5),ay);ctx.lineTo(ax+Math.round(BU*.5),ay);ctx.stroke();
+  ctx.save();ctx.translate(ax,ay);ctx.rotate(wt*.3);
+  ctx.strokeStyle='#808898';ctx.lineWidth=Math.max(1,S);
+  for(let g=0;g<8;g++){const r1=Math.round(BU*.4),r2=Math.round(BU*.65);ctx.beginPath();ctx.moveTo(Math.cos(g*Math.PI/4)*r1,Math.sin(g*Math.PI/4)*r1);ctx.lineTo(Math.cos(g*Math.PI/4)*r2,Math.sin(g*Math.PI/4)*r2);ctx.stroke();}
+  ctx.restore();ctx.lineWidth=1;
+}
+
+
+function drawLighthouse(x,GY,W,H,BU){
+  const w=Math.round(BU*2), h=Math.round(BU*2);
+  px(x+2,GY-h,w-4,h,'#c0c0a8'); px(x+w-Math.round(BU*.55),GY-h,Math.round(BU*.55),h,shade('#c0c0a8',-16));
+  for(let b=0;b<3;b++) px(x+2,GY-h+b*Math.round(h/3),w-4,1,shade('#c0c0a8',-8));
+  px(x+Math.round(w*.35),GY-Math.round(BU*1.2),Math.round(BU*.6),Math.round(BU*1.2),'#5a3010');
+  ctx.fillStyle=shade('#5a3010',18); ctx.beginPath(); ctx.arc(x+Math.round(w*.35+BU*.3),GY-Math.round(BU*1.2),Math.round(BU*.3),Math.PI,0); ctx.fill();
+  px(x+Math.round(w*.2),GY-3,Math.round(w*.6),3,'#b0b098');
+  const stripeH=Math.round(BU*.6), stripes=7;
+  for(let i=0;i<stripes;i++) px(x+Math.round(BU*.3)+Math.floor(i*.4),GY-h-i*stripeH,w-Math.round(BU*.6)-Math.floor(i*.8),stripeH,i%2===0?'#e8e8cc':'#e04030');
+  const top=GY-h-stripes*stripeH;
+  px(x+2,top,w-4,5,'#c0c0a8'); px(x,top+2,w,3,'rgba(255,255,255,.2)');
+  for(let r=0;r<4;r++) px(x+Math.round(BU*.25)+r*Math.round(BU*.45),top,Math.round(BU*.3),7,'#d0d0b8');
+  const lrW=w-Math.round(BU*.7), lrH=Math.round(BU*1);
+  px(x+Math.round(BU*.35),top-lrH,lrW,lrH,'#3060a0'); px(x+Math.round(BU*.28),top-lrH-3,lrW+Math.round(BU*.14),4,'#c0c0a8');
+  for(let g=0;g<3;g++) px(x+Math.round(BU*.42)+g*Math.round(BU*.42),top-lrH+2,Math.round(BU*.32),lrH-4,'rgba(200,230,255,.3)');
+  ctx.fillStyle='#c0c0a8'; ctx.beginPath(); ctx.moveTo(x+4,top-lrH); ctx.lineTo(x+w*.5,top-lrH-BU); ctx.lineTo(x+w-4,top-lrH); ctx.closePath(); ctx.fill();
+  px(x+Math.round(w*.5-2),top-lrH-BU-2,4,4,'#f0f0e0');
+  if(G.hour>19||G.hour<6){
+    const ang=wt*.6, cx2=x+w*.5, cy2=top-lrH+4;
+    ctx.save(); ctx.globalAlpha=.08; ctx.fillStyle='#ffffd0';
+    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang)*200,cy2+Math.sin(ang)*70); ctx.lineTo(cx2+Math.cos(ang+.4)*200,cy2+Math.sin(ang+.4)*70); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.07; ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang+Math.PI)*200,cy2+Math.sin(ang+Math.PI)*70); ctx.lineTo(cx2+Math.cos(ang+Math.PI+.4)*200,cy2+Math.sin(ang+Math.PI+.4)*70); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha=.95; ctx.fillStyle='#ffffc0'; ctx.beginPath(); ctx.arc(cx2,cy2,6,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.globalAlpha=.25; ctx.fillStyle='#ffffc0'; ctx.beginPath(); ctx.arc(cx2,cy2,14,0,Math.PI*2); ctx.fill(); ctx.restore();
+  }
+}
+
+function drawDock(x,GY,H,W,BU){
+  const wl=H*.645;
+  const dw=Math.round(BU*8);
+  const pillarW=Math.max(5,Math.round(BU*.38)), pillarGap=Math.round(BU*1.1);
+  const numP=Math.round(dw/pillarGap);
+  for(let i=0;i<numP;i++){
+    const p2=x+i*pillarGap;
+    ctx.fillStyle='#6d4c41'; ctx.fillRect(p2,GY-5,pillarW,GY-wl+22);
+    ctx.fillStyle=shade('#6d4c41',12); ctx.fillRect(p2,GY-5,Math.round(pillarW*.4),GY-wl+22);
+    ctx.fillStyle=shade('#6d4c41',-15); ctx.fillRect(p2,wl+5,pillarW,7);
+    for(let b=0;b<4;b++){ctx.fillStyle='#2a3a30';ctx.fillRect(p2+1,wl+b*5,2,3);}
+    ctx.fillStyle='#1e5030';ctx.fillRect(p2,wl,3,9);
+  }
+  const plankH=3, plankCount=11;
+  for(let p=0;p<plankCount;p++){
+    ctx.fillStyle=p%2===0?'#c8a860':'#b09048'; ctx.fillRect(x-6,GY-6-p*plankH,dw+10,plankH);
+    ctx.fillStyle='rgba(255,255,255,.04)'; ctx.fillRect(x-6,GY-6-p*plankH,dw+10,1);
+  }
+  const railY=GY-6-plankCount*plankH;
+  px(x-6,railY,Math.round(BU*.5),GY-railY,'#8B6010'); px(x+dw+4,railY,Math.round(BU*.5),GY-railY,'#8B6010');
+  px(x-6,railY,dw+16,5,'#a07828');
+  for(let b=0;b<Math.min(4,Math.round(dw/BU/2));b++){
+    const bx2=x+Math.round(b*(dw-BU)/(3));
+    px(bx2,GY-38,Math.round(BU*.65),Math.round(BU*.8),'#505860'); px(bx2+1,GY-39,Math.round(BU*.5),3,'#606870');
+    ctx.strokeStyle='#c8a040'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(bx2+Math.round(BU*.32),GY-36,Math.round(BU*.28),0,Math.PI*2); ctx.stroke();
+  }
+  for(let r=0;r<4;r++){ctx.strokeStyle=`rgba(200,160,60,${.5+r*.1})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x+dw-Math.round(BU*.3),GY-16,3+r*1.5,0,Math.PI*2);ctx.stroke();}
+  const bktW=Math.round(BU*1.2), bktH=Math.round(BU*1);
+  px(x+dw-bktW-2,GY-bktH-4,bktW,bktH,'#8B6010');
+  for(let sl=0;sl<3;sl++) px(x+dw-bktW-2+sl*Math.round(bktW/3),GY-bktH-3,2,bktH,'rgba(0,0,0,.18)');
+  const iceW=Math.round(BU*1.4), iceH=Math.round(BU*1);
+  px(x+Math.round(BU*1.5),GY-iceH-4,iceW,iceH,'#3070a0');
+  px(x+Math.round(BU*1.5)+2,GY-iceH-3,iceW-4,4,'#c0e0f0');
+  ctx.save(); ctx.translate(x+Math.round(BU*1),wl+6+Math.sin(wt*.9)*2.5); ctx.rotate(Math.sin(wt*.6)*.03);
+  const dg=ctx.createLinearGradient(0,0,0,11); dg.addColorStop(0,'#d44020'); dg.addColorStop(1,'#922010');
+  ctx.fillStyle=dg;
+  const dbl=Math.round(BU*1.3), dbh=Math.round(BU*.75);
+  ctx.beginPath(); ctx.moveTo(-dbl,0); ctx.lineTo(dbl+Math.round(BU*.5),0); ctx.lineTo(dbl,dbh); ctx.lineTo(-dbl+Math.round(BU*.5),dbh); ctx.closePath(); ctx.fill();
+  px(-dbl+2,-Math.round(BU*.45),dbl*2,Math.round(BU*.55),'#a82010');
+  px(0,-2,8,5,'#1a4a80'); px(2,-7,5,6,'#c89060');
+  ctx.restore();
+  ctx.save(); ctx.translate(x+Math.round(BU*3.5),wl+8+Math.sin(wt*1.1+1)*2); ctx.rotate(Math.sin(wt*.7+1)*.025);
+  const dbl2=Math.round(BU*1.1);
+  ctx.fillStyle='#204080';
+  ctx.beginPath(); ctx.moveTo(-dbl2,0); ctx.lineTo(dbl2+Math.round(BU*.4),0); ctx.lineTo(dbl2,Math.round(BU*.65)); ctx.lineTo(-dbl2+Math.round(BU*.4),Math.round(BU*.65)); ctx.closePath(); ctx.fill();
+  px(-dbl2+2,-4,dbl2*2,5,'#183060');
+  ctx.restore();
+  const lpX=x+dw+Math.round(BU*.5);
+  px(lpX,GY-Math.round(BU*4),4,Math.round(BU*4),'#404840');
+  px(lpX,GY-Math.round(BU*3.8),Math.round(BU*.8),3,'#404840');
+  px(lpX+Math.round(BU*.8),GY-Math.round(BU*3.8),4,Math.round(BU*.65),'#404840');
+  px(lpX+Math.round(BU*.6),GY-Math.round(BU*4.1),Math.round(BU*.7),Math.round(BU*.7),'#707860');
+  if(G.hour>19||G.hour<6){
+    ctx.save();ctx.globalAlpha=.85;ctx.fillStyle='#ffe090';ctx.fillRect(lpX+Math.round(BU*.66),GY-Math.round(BU*4.05),Math.round(BU*.45),Math.round(BU*.45));ctx.restore();
+    ctx.save();ctx.globalAlpha=.14;ctx.fillStyle='#ffe080';ctx.beginPath();ctx.arc(lpX+Math.round(BU*.85),GY-Math.round(BU*3.8),Math.round(BU*2),0,Math.PI*2);ctx.fill();ctx.restore();
+  } else {
+    px(lpX+Math.round(BU*.66),GY-Math.round(BU*4.05),Math.round(BU*.45),Math.round(BU*.45),'#b0b090');
+  }
+}
+
+function drawPalm(x,GY,W,H){
+  const lean=Math.sin(wt*.35)*.04;
+  const seg=Math.max(8,Math.round(W/70));
+  for(let i=0;i<7;i++){
+    const tx=x+Math.sin(i*.55+lean)*seg*.55, ty=GY-i*seg;
+    ctx.fillStyle=i%2?'#7d5418':'#6b4510'; ctx.fillRect(Math.round(tx-seg*.4),ty,Math.round(seg*.85),seg+2);
+    ctx.fillStyle=shade(i%2?'#7d5418':'#6b4510',14); ctx.fillRect(Math.round(tx-seg*.12),ty,Math.round(seg*.35),seg+2);
+    ctx.fillStyle=shade(i%2?'#7d5418':'#6b4510',-12); ctx.fillRect(Math.round(tx+seg*.3),ty,Math.round(seg*.18),seg+2);
+    px(Math.round(tx-seg*.4),ty+seg,Math.round(seg*.85),2,shade(i%2?'#7d5418':'#6b4510',-20));
+  }
+  const tx=x+Math.sin(7*.55+lean)*seg*.55;
+  for(let c=0;c<3;c++){
+    px(Math.round(tx-seg*.4)+c*Math.round(seg*.5),GY-7*seg-Math.round(seg*.5)+c%2,Math.round(seg*.5),Math.round(seg*.5),'#7B3F00');
+    px(Math.round(tx-seg*.3)+c*Math.round(seg*.5),GY-7*seg-Math.round(seg*.6)+c%2,Math.round(seg*.35),Math.round(seg*.35),'#9B5F20');
+  }
+  const angles=[-115,-80,-50,-18,15,50,80,112];
+  const fLen=Math.max(16,seg*1.6);
+  for(const ang of angles){
+    const sway=Math.sin(wt*.4+ang*.02)*.08;
+    const rad=(ang-90)*Math.PI/180+sway;
+    ctx.strokeStyle='#27ae60'; ctx.lineWidth=Math.max(2,seg*.22);
+    ctx.beginPath(); ctx.moveTo(Math.round(tx),GY-7*seg);
+    const cpx=tx+Math.cos(rad)*fLen*.4, cpy=GY-7*seg+Math.sin(rad)*fLen*.4;
+    ctx.quadraticCurveTo(cpx,cpy,tx+Math.cos(rad+sway*.5)*fLen,GY-7*seg+Math.sin(rad+sway*.5)*fLen); ctx.stroke();
+    ctx.strokeStyle='#2ecc71'; ctx.lineWidth=Math.max(1,seg*.1);
+    for(let l=1;l<5;l++){
+      const lf=l/5, plx=tx+Math.cos(rad)*fLen*lf, ply=GY-7*seg+Math.sin(rad)*fLen*lf;
+      const a1=rad+.75+sway, a2=rad-.75+sway, ls=Math.max(4,seg*.4)+l;
+      ctx.beginPath();ctx.moveTo(plx,ply);ctx.lineTo(plx+Math.cos(a1)*ls,ply+Math.sin(a1)*ls);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(plx,ply);ctx.lineTo(plx+Math.cos(a2)*ls,ply+Math.sin(a2)*ls);ctx.stroke();
+    }
+  }
+  ctx.lineWidth=1;
+}
+
+function drawVillager(x,y,type,faceR){
+  const f=faceR?1:-1;
+  ctx.save(); ctx.translate(Math.round(x),Math.round(y)); ctx.scale(f,1);
+  const walk=Math.sin(wt*4+x*.03)*.8;
+  // Shoes
+  const shoeC={fisherman:'#3a2810',scientist:'#1a1a2a',elder:'#2a2010',boy:'#2a1a10'}[type]||'#2a1a10';
+  px(-5,18,5,4,shoeC); px(0,18+walk*1.5,5,4,shoeC);
+  // Legs
+  const legC={fisherman:'#1a4a80',scientist:'#303030',elder:'#604020',boy:'#203060'}[type]||'#303050';
+  px(-4,8+walk*2,4,12,legC); px(0,8-walk*2,4,12,legC);
+  // Body
+  const bodyC={fisherman:'#c89040',scientist:'#3050a0',elder:'#7a5830',boy:'#b03030'}[type]||'#505080';
+  px(-7,-5,14,15,bodyC);
+  // Collar/detail
+  px(-7,-5,3,4,shade(bodyC,15)); px(4,-5,3,4,shade(bodyC,15));
+  // Arms
+  px(-11,-3+walk*2,5,11,bodyC); px(6,-3-walk*2,5,11,bodyC);
+  // Hands
+  const skinC=['#e0b080','#c89060','#d4a070','#b87840'][Math.floor((x*.01+y*.01))%4];
+  px(-12,8+walk*2,5,4,skinC); px(7,8-walk*2,5,4,skinC);
+  // Neck
+  px(-2,-8,4,4,skinC);
+  // Head
+  px(-5,-20,10,13,skinC);
+  px(-5,-21,10,2,shade(skinC,-10));
+  // Eyes
+  px(-3,-15,2,2,'#2a1a0a'); px(1,-15,2,2,'#2a1a0a');
+  px(-3,-15,1,1,'rgba(255,255,255,.4)');
+  // Mouth
+  px(-2,-11,4,1,shade(skinC,-20));
+  // Type-specific
+  if(type==='fisherman'){
+    // Hat
+    px(-7,-28,14,8,'#c89040'); px(-5,-34,10,8,'#c89040'); px(-9,-22,18,4,'#a07020');
+    // Fishing rod
+    ctx.strokeStyle='#7d4a14'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(20,-18); ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,200,.55)'; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+    ctx.beginPath(); ctx.moveTo(20,-18); ctx.lineTo(24+Math.sin(wt*1.5)*5,5); ctx.stroke();
+    ctx.setLineDash([]);
+  } else if(type==='scientist'){
+    // Lab coat
+    px(-7,-5,3,10,'#e8e8e8'); px(4,-5,3,10,'#e8e8e8');
+    // Glasses
+    px(-5,-16,3,2,'#404040'); px(1,-16,3,2,'#404040'); px(-2,-15,2,1,'#404040');
+    // Clipboard
+    px(7,0,8,10,'#f0d080'); px(8,1,6,8,'#e8e8e8');
+  } else if(type==='elder'){
+    // Grey hair
+    px(-5,-26,10,8,'#c0c0c0');
+    // Shawl
+    px(-8,-2,16,5,shade('#7a5830',-20));
+    // Cane
+    ctx.strokeStyle='#8B6010'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-8,18); ctx.lineTo(-10,-5); ctx.stroke();
+    px(-14,-7,6,4,'#8B6010');
+  } else if(type==='boy'){
+    // Spiky hair
+    px(-5,-24,10,6,'#402010');
+    for(let i=0;i<4;i++) px(-4+i*3,-28,2,6,shade('#402010',i*5));
+    // Backpack
+    px(6,-4,8,12,'#3060a0'); px(7,-3,6,10,shade('#3060a0',15));
+  }
+  ctx.restore();
+}
+
+// ─── RENDER LOOP ───────────────────────────────────────────
+function drawBirds(W,H){
+  const GY=H*0.70;
+  for(const b of seaBirds){
+    // Move
+    b.x+=b.dir*b.speed*(b.soaring?0.6:1);
+    b.bob+=b.bobSpeed*0.016;
+    b.wingPhase+=b.wingSpeed;
+    if(b.type==='gull') b.veer+=0.008;
+
+    // Wrap / bounce
+    if(b.x>W+30){b.x=-30; b.dir=1;}
+    if(b.x<-30){b.x=W+30; b.dir=-1;}
+
+    // Occasionally change direction or soar state
+    if(Math.random()<0.002) b.dir*=-1;
+    if(Math.random()<0.003) b.soaring=!b.soaring;
+
+    ctx.save();
+
+    if(b.type==='pelican'){
+      const bx=Math.round(b.x), by=Math.round(b.y+Math.sin(b.bob)*3);
+      ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
+      // Body – elongated oval
+      ctx.fillStyle='#d8d0c0';
+      ctx.beginPath(); ctx.ellipse(0,0,b.size*1.4,b.size*.55,0,0,Math.PI*2); ctx.fill();
+      // Wing spread (animated)
+      const wf=b.soaring?0:Math.sin(b.wingPhase)*0.5;
+      ctx.fillStyle='#b0a898';
+      // Left wing
+      ctx.beginPath(); ctx.moveTo(-b.size*.3,0);
+      ctx.quadraticCurveTo(-b.size*1.2,-b.size*(0.4+wf),-b.size*1.8,-b.size*(0.1-wf*.3));
+      ctx.quadraticCurveTo(-b.size*1.1,-b.size*(0.05),-b.size*.3,b.size*.2); ctx.fill();
+      // Right wing
+      ctx.beginPath(); ctx.moveTo(b.size*.3,0);
+      ctx.quadraticCurveTo(b.size*1.2,-b.size*(0.4+wf),b.size*1.8,-b.size*(0.1-wf*.3));
+      ctx.quadraticCurveTo(b.size*1.1,-b.size*.05,b.size*.3,b.size*.2); ctx.fill();
+      // Wing tips darker
+      ctx.fillStyle='#404038';
+      ctx.beginPath(); ctx.ellipse(-b.size*1.7,-b.size*(0.12-wf*.3),b.size*.35,b.size*.15,0.2,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(b.size*1.7,-b.size*(0.12-wf*.3),b.size*.35,b.size*.15,-0.2,0,Math.PI*2); ctx.fill();
+      // Head + beak
+      ctx.fillStyle='#e8e0d0';
+      ctx.beginPath(); ctx.arc(-b.size*1.2,0,b.size*.38,0,Math.PI*2); ctx.fill();
+      // Beak (long, pelican)
+      ctx.fillStyle='#c89850';
+      ctx.beginPath(); ctx.moveTo(-b.size*1.5,-b.size*.05);
+      ctx.lineTo(-b.size*2.4,-b.size*.1);
+      ctx.lineTo(-b.size*2.4,b.size*.12);
+      ctx.lineTo(-b.size*1.5,b.size*.08); ctx.closePath(); ctx.fill();
+      // Pouch hint
+      ctx.fillStyle='#e0a860';
+      ctx.beginPath(); ctx.ellipse(-b.size*1.95,b.size*.08,b.size*.28,b.size*.1,0.15,0,Math.PI*2); ctx.fill();
+      // Eye
+      ctx.fillStyle='#202018'; ctx.beginPath(); ctx.arc(-b.size*1.05,-b.size*.08,b.size*.1,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.6)'; ctx.beginPath(); ctx.arc(-b.size*1.02,-b.size*.1,b.size*.04,0,Math.PI*2); ctx.fill();
+    }
+
+    else if(b.type==='gull'){
+      const vx=Math.sin(b.veer)*8;
+      const bx=Math.round(b.x+vx), by=Math.round(b.y+Math.sin(b.bob)*4);
+      ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
+      const wf=b.soaring?0:Math.abs(Math.sin(b.wingPhase));
+      // Body
+      ctx.fillStyle='#f0eeea';
+      ctx.beginPath(); ctx.ellipse(0,0,b.size*1.1,b.size*.4,0,0,Math.PI*2); ctx.fill();
+      // Wings – M shape
+      ctx.strokeStyle='#d8d4cc'; ctx.lineWidth=b.size*.4; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6));
+      ctx.lineTo(-b.size*.2,-b.size*.15);
+      ctx.lineTo(b.size*.2,-b.size*.15);
+      ctx.lineTo(b.size*1.6,-b.size*(0.5+wf*.6));
+      ctx.stroke();
+      // Wing tips
+      ctx.strokeStyle='#606058'; ctx.lineWidth=b.size*.3;
+      ctx.beginPath(); ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(-b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
+      // Head
+      ctx.fillStyle='#f8f8f5'; ctx.beginPath(); ctx.arc(-b.size*.9,0,b.size*.35,0,Math.PI*2); ctx.fill();
+      // Beak (short, yellow)
+      ctx.fillStyle='#d4a028';
+      ctx.beginPath(); ctx.moveTo(-b.size*1.2,-b.size*.06); ctx.lineTo(-b.size*1.65,-b.size*.06);
+      ctx.lineTo(-b.size*1.55,b.size*.06); ctx.lineTo(-b.size*1.15,b.size*.04); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#c03820';
+      ctx.beginPath(); ctx.ellipse(-b.size*1.5,b.size*.04,b.size*.08,b.size*.04,0,0,Math.PI*2); ctx.fill();
+      // Eye
+      ctx.fillStyle='#1a1810'; ctx.beginPath(); ctx.arc(-b.size*.82,-b.size*.05,b.size*.09,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-b.size*.79,-b.size*.07,b.size*.04,0,Math.PI*2); ctx.fill();
+      ctx.lineCap='butt'; ctx.lineWidth=1;
+    }
+
+    else if(b.type==='sandpiper'){
+      // Runs along beach edge
+      const bx=Math.round(b.x), by=Math.round(GY-6+Math.sin(b.runPhase)*1.5);
+      b.runPhase+=0.12;
+      ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
+      // Legs animate
+      const legF=Math.sin(b.runPhase);
+      ctx.strokeStyle='#c0a878'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-1,b.size*.4); ctx.lineTo(-2+legF,b.size*.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(1,b.size*.4); ctx.lineTo(2-legF,b.size*.9); ctx.stroke();
+      // Body
+      ctx.fillStyle='#c8b890';
+      ctx.beginPath(); ctx.ellipse(0,0,b.size*.9,b.size*.45,-.15,0,Math.PI*2); ctx.fill();
+      // Wing stripe
+      ctx.fillStyle='#806848';
+      ctx.beginPath(); ctx.ellipse(0,-b.size*.05,b.size*.7,b.size*.18,-.15,0,Math.PI*2); ctx.fill();
+      // Belly (lighter)
+      ctx.fillStyle='#f0ece0';
+      ctx.beginPath(); ctx.ellipse(b.size*.05,b.size*.1,b.size*.45,b.size*.28,0.1,0,Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle='#806848'; ctx.beginPath(); ctx.arc(-b.size*.75,0,b.size*.32,0,Math.PI*2); ctx.fill();
+      // Eye stripe
+      ctx.fillStyle='#f0ece0'; ctx.beginPath(); ctx.ellipse(-b.size*.72,-b.size*.05,b.size*.22,b.size*.08,0,0,Math.PI*2); ctx.fill();
+      // Beak (long thin)
+      ctx.strokeStyle='#403820'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-b.size*1.05,b.size*.02); ctx.lineTo(-b.size*1.6,b.size*.08); ctx.stroke();
+      // Eye
+      ctx.fillStyle='#1a1008'; ctx.beginPath(); ctx.arc(-b.size*.74,-b.size*.02,b.size*.08,0,Math.PI*2); ctx.fill();
+      ctx.lineWidth=1;
+    }
+
+    ctx.restore();
+  }
+}
+
+function renderLoop(){
+  wt+=.016;
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const hr=G.hour, isNight=hr<6||hr>20;
+
+  // SKY
+  const skyTop=G.storm?'#3a4a6a':isNight?'#0d1a38':hr<10?'#6ab0e0':'#4a9ad4';
+  const skyBot=G.storm?'#4a5a7a':isNight?'#1a2a50':hr<10?'#90c8f0':'#70b8f0';
+  const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+
+  // Stars
+  if(isNight) for(let i=0;i<55;i++){
+    const sx=(i*137+50)%W, sy=(i*79+20)%(H*.37);
+    const b=Math.sin(wt*1.5+i)>.6?2:1;
+    ctx.fillStyle=`rgba(255,255,255,${.25+.6*(b-1)})`; ctx.fillRect(sx,sy,b,b);
+  }
+
+  // Sun / Moon
+  const dp=Math.max(0,Math.min(1,(hr-6)/12));
+  const sunX=(H>W?W*.55:W*.72)+Math.sin(wt*.04)*12;
+  const sunY=H*.24-Math.sin(dp*Math.PI)*H*.13;
+  if(hr>=6&&hr<=18&&!G.storm){
+    ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#f1c40f';
+    ctx.beginPath(); ctx.arc(sunX,sunY,35,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.fillStyle='#f1c40f'; ctx.beginPath(); ctx.arc(sunX,sunY,18,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
+  } else if(!G.storm){
+    ctx.fillStyle='#cfd8e3'; ctx.beginPath(); ctx.arc(sunX,sunY,14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#b0bcc8'; ctx.beginPath(); ctx.arc(sunX+4,sunY-3,6,0,Math.PI*2); ctx.fill();
+  }
+
+  // Clouds – fluffy white (stormy = dark)
+  if(G.weather==='cloudy'||G.weather==='windy'){
+    for(let i=0;i<4;i++){
+      const cx=((i*W/4+wt*18+i*60)%(W+180))-90;
+      const cy=H*.06+i%2*20;
+      ctx.fillStyle='rgba(255,255,255,.85)';
+      ctx.beginPath(); ctx.ellipse(cx,cy,70+i*12,22,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx-28,cy+4,48,17,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx+32,cy+2,42,16,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx-8,cy-14,36,18,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(220,235,255,.6)';
+      ctx.beginPath(); ctx.ellipse(cx+10,cy-10,28,14,0,0,Math.PI*2); ctx.fill();
+    }
+  }
+  if(G.storm){
+    const cc='#5a6a80';
+    for(let i=0;i<5;i++){
+      const cx=((i*W/5+wt*28+i*40)%(W+140))-70;
+      ctx.fillStyle=cc;
+      ctx.beginPath(); ctx.ellipse(cx,H*.07+i%2*16,85+i*14,28,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx-32,H*.09+i%2*13,58,21,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx+38,H*.08+i%2*15,52,19,0,0,Math.PI*2); ctx.fill();
+    }
+    if(G.storm){
+      ctx.strokeStyle='rgba(110,155,220,.38)'; ctx.lineWidth=1;
+      for(let i=0;i<90;i++){const rx=(i*57+wt*260)%W,ry=(i*83+wt*380)%H;ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx-3,ry+15);ctx.stroke();}
+      if(Math.sin(wt*6)>.93){ctx.strokeStyle='#fff8c0';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(W*.34,H*.03);ctx.lineTo(W*.32,H*.18);ctx.lineTo(W*.35,H*.2);ctx.lineTo(W*.31,H*.32);ctx.stroke();}
+    }
+  }
+
+  // WATER – bright turquoise island style
+  const zw=G.zone==='manglar'?['#40c8a0','#20a880']:G.zone==='arrecife'?['#30b8d8','#20a0c8']:['#2090c8','#1870a8'];
+  const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
+  ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+  // Foam/shimmer con reflejos de colores
+  for(let i=0;i<6;i++){
+    ctx.fillStyle=`rgba(255,255,255,${.07+.05*Math.sin(wt*1.2+i*1.1)})`;
+    ctx.fillRect(0,H*(.40+i*.04),W,3);
+  }
+  // Destellos de luz solar sobre el agua (solo de día)
+  if(!G.storm&&G.hour>=7&&G.hour<=17){
+    for(let i=0;i<12;i++){
+      const sx=((i*W/5+wt*60*(i%2?1:-1))%(W*1.2))-W*.1;
+      const sy=H*(.38+Math.sin(wt*.5+i)*.05);
+      const alpha=0.06+0.05*Math.abs(Math.sin(wt*2+i*0.7));
+      ctx.save(); ctx.globalAlpha=alpha;
+      ctx.fillStyle='#fffbe0';
+      ctx.beginPath(); ctx.ellipse(sx,sy,18+i%3*6,3,0.3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+  // Reflejo de luna de noche
+  if(G.hour>20||G.hour<5){
+    const moonX=W*.72; const moonY=H*.24;
+    ctx.save(); ctx.globalAlpha=0.12;
+    const rg=ctx.createLinearGradient(moonX-8,H*.36,moonX+8,H*.55);
+    rg.addColorStop(0,'rgba(255,255,255,0)'); rg.addColorStop(.5,'rgba(220,230,255,.8)'); rg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.ellipse(moonX,H*.46,12,H*.08,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  // Animated wave crests
+  for(const w of waves){
+    w.x-=w.speed*(G.storm?3.5:1); if(w.x<-130)w.x=W+130;
+    const wy=H*w.y+Math.sin(wt*1.4+waves.indexOf(w))*w.amp;
+    ctx.strokeStyle=`rgba(255,255,255,${.18+.15*Math.abs(Math.sin(wt+waves.indexOf(w)))})`; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(w.x-55,wy); ctx.quadraticCurveTo(w.x,wy-w.amp*.8,w.x+55,wy); ctx.stroke();
+    // Second smaller crest
+    ctx.strokeStyle=`rgba(255,255,255,${.08+.06*Math.abs(Math.sin(wt+waves.indexOf(w)+1))})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(w.x-30,wy+5); ctx.quadraticCurveTo(w.x+10,wy-w.amp*.3,w.x+35,wy+5); ctx.stroke();
+  }
+
+  // ── LAYER 1: SEABED (behind everything) ──
+  { const _seaW=W>H?W*0.56:W;
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,_seaW,H); ctx.clip();
+  {
+    const _wl=H*0.645;
+    const _cc=['#e05050','#e09030','#50c090','#9040e0','#e04080','#40a0e0'];
+    for(let i=0;i<6;i++) drawCoral(W*(0.04+i*0.085),_wl,_cc[i]);
+    for(let i=0;i<8;i++){
+      const sx=W*(0.03+i*0.06),sw=Math.sin(wt*0.8+i)*3;
+      px(sx+sw,_wl-18,3,18,'#28a060'); px(sx+sw+5,_wl-13,2,13,'#1e8050');
+      px(sx+sw+2,_wl-22,2,7,'#32c070');
+    }
+  }
+  ctx.restore();
+  } // end _seaW block
+
+  // ── LAYER 2: ZONE DECORATIONS (behind structures) ──
+  { const _zdW=W>H?W*0.56:W;
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,_zdW,H); ctx.clip();
+  drawZoneDeco(W,H);
+  ctx.restore(); }
+
+  // ── LAYER 3: FISH (behind structures) ──
+  { const _isP=canvas.height>canvas.width;
+    const _clipW=_isP?canvas.width:canvas.width*0.56;
+    ctx.save(); ctx.beginPath(); ctx.rect(0,0,_clipW,canvas.height); ctx.clip();
+    for(const f of fishEntities){
+      f.bob+=.04; f.x+=f.dir*f.speed;
+      if(f.x>_clipW+10)f.x=-35; if(f.x<-35)f.x=_clipW-10;
+      drawFish(f.x,f.y+Math.sin(f.bob)*5,f.sp,0.45,f.dir>0);
+    }
+    ctx.restore();
+  }
+
+  // ── LAYER 4: BIRDS (behind structures, above water) ──
+  drawBirds(W,H);
+
+  // ── LAYER 5: BOAT (behind structures) ──
+  if(boatX>W*0.54) boatX=W*0.22;
+  drawBoat(boatX,boatY);
+
+  // ── LAYER 6: VILLAGE (ground + dock + buildings = TOP LAYER) ──
+  drawVillage(W,H);
+
+  // Fishing line
+  if(G.fishing){
+    const lx=boatX+14,ly=boatY+26+Math.sin(wt*3)*8;
+    ctx.strokeStyle='rgba(255,255,200,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(boatX+20,boatY-8); ctx.lineTo(lx,ly+30); ctx.stroke(); ctx.setLineDash([]);
+    px(lx-3,ly+30,8,5,'#e74c3c'); px(lx-1,ly+30,4,2,'#fff');
+  }
+
+  // Particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy-=.04; p.life-=.018;
+    if(p.life<=0){particles.splice(i,1);continue;}
+    ctx.globalAlpha=p.life; drawFish(p.x,p.y,p.sp,0.8,true); ctx.globalAlpha=1;
+  }
+
+  requestAnimationFrame(renderLoop);
+}
+
+function drawZoneDeco(W,H){
+  const wl=H*.645;
+  if(G.zone==='manglar'){
+    for(let i=0;i<5;i++){
+      const mx=W*(.5+i*.1);
+      ctx.strokeStyle='#3d6b2a'; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.moveTo(mx,wl-8); ctx.lineTo(mx-18,wl+22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mx,wl-8); ctx.lineTo(mx+18,wl+24); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mx,wl-8); ctx.lineTo(mx,wl+28); ctx.stroke();
+      px(mx-12,wl-32,24,24,'#2d5a20');
+    }
+  } else if(G.zone==='arrecife'){
+    const cr=[{x:.52,c:'#e05050'},{x:.60,c:'#e09030'},{x:.68,c:'#50c090'},{x:.76,c:'#9040e0'},{x:.84,c:'#e04080'}];
+    for(const c of cr){
+      const cx=W*c.x;
+      px(cx-5,wl-24,10,24,c.c); px(cx-9,wl-16,5,16,shade(c.c,-25)); px(cx+5,wl-20,5,20,shade(c.c,10));
+      px(cx-7,wl-28,5,6,c.c); px(cx+2,wl-32,5,9,c.c); px(cx-1,wl-30,3,3,shade(c.c,30));
+      ctx.save(); ctx.globalAlpha=.3; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,wl-24,4,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+  } else {
+    ctx.fillStyle='#0a2a10'; ctx.beginPath(); ctx.ellipse(W*.83,H*.335,45,12,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0d3a18'; ctx.beginPath(); ctx.ellipse(W*.84,H*.33,28,8,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(93,173,226,.18)'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(W*.5,H*.41+Math.sin(wt)*7); ctx.bezierCurveTo(W*.62,H*.39,W*.72,H*.43,W*.82,H*.41+Math.sin(wt+1)*7); ctx.stroke();
+  }
+}
+
+function drawBoat(bx,by){
+  ctx.save();
+  const S=PS; // scale
+  const bob=Math.sin(wt*1.1)*(G.storm?9:3)*S;
+  const tilt=Math.sin(wt*.7)*(G.storm?.07:.02);
+  ctx.translate(bx,by+bob); ctx.rotate(tilt);
+
+  // Wake ripples
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=3*S;
+  ctx.beginPath(); ctx.moveTo(-40*S,16*S); ctx.quadraticCurveTo(-65*S,26*S,-105*S,20*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( 40*S,16*S); ctx.quadraticCurveTo( 65*S,26*S, 105*S,20*S); ctx.stroke();
+
+  // Hull shadow
+  ctx.fillStyle='rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.moveTo(-36*S,2*S); ctx.lineTo(36*S,2*S); ctx.lineTo(28*S,20*S); ctx.lineTo(-28*S,20*S); ctx.closePath(); ctx.fill();
+
+  // Hull (gradient)
+  const hG=ctx.createLinearGradient(0,-4*S,0,20*S);
+  hG.addColorStop(0,'#b85e30'); hG.addColorStop(.4,'#9a4820'); hG.addColorStop(1,'#6b3010');
+  ctx.fillStyle=hG;
+  ctx.beginPath(); ctx.moveTo(-36*S,-2*S); ctx.lineTo(36*S,-2*S); ctx.lineTo(28*S,18*S); ctx.lineTo(-28*S,18*S); ctx.closePath(); ctx.fill();
+  // Hull plank lines
+  for(let p=0;p<5;p++){ctx.fillStyle=`rgba(0,0,0,${.07+p*.01})`;ctx.fillRect(-34*S+p*3*S,p*4*S-1*S,68*S-p*6*S,2*S);}
+  // Hull highlight stripe
+  px(-34*S,-2*S,68*S,2*S,'rgba(255,255,255,.18)');
+  // Waterline stripe
+  px(-30*S,12*S,60*S,3*S,'rgba(255,255,255,.22)');
+  // Copper bottom hint
+  px(-26*S,14*S,52*S,4*S,'rgba(180,100,30,.35)');
+
+  // Deck
+  const dG=ctx.createLinearGradient(0,-9*S,0,0);dG.addColorStop(0,'#d4883c');dG.addColorStop(1,'#b06828');
+  ctx.fillStyle=dG; ctx.fillRect(-28*S,-9*S,56*S,9*S);
+  // Deck planks
+  for(let p=0;p<7;p++){ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(-26*S+p*8*S,-8*S,7*S,7*S);}
+  ctx.fillStyle='rgba(0,0,0,.12)'; for(let p=0;p<6;p++) ctx.fillRect(-27*S+p*9*S,-8*S,2*S,7*S);
+
+  // Cabin
+  const cG=ctx.createLinearGradient(-14*S,-24*S,0,-8*S);cG.addColorStop(0,'#ddb460');cG.addColorStop(1,'#b88840');
+  ctx.fillStyle=cG; ctx.fillRect(-14*S,-24*S,28*S,16*S);
+  px(12*S,-24*S,4*S,16*S,shade('#b88840',-22)); // shadow side
+  px(-14*S,-24*S,28*S,3*S,shade('#ddb460',20)); // cabin top highlight
+  drawWin(-10*S,-21*S,9*S,8*S);
+  drawWin(1*S,-21*S,9*S,8*S);
+  // Cabin door
+  px(-3*S,-9*S,6*S,9*S,shade('#8b5020',-10));
+  px(-2*S,-9*S,2*S,8*S,'rgba(0,0,0,.2)');
+  px(1*S,-6*S,1.5*S,1.5*S,'#c8a040');
+
+  // Mast base detail
+  px(0,-26*S,5*S,2*S,'#6b4020');
+  // Mast
+  const mG=ctx.createLinearGradient(0,-26*S,3*S,-26*S);mG.addColorStop(0,'#8d6030');mG.addColorStop(1,'#5a3810');
+  ctx.fillStyle=mG; ctx.fillRect(0,-26*S,4*S,52*S);
+  // Cross spar
+  px(-24*S,-50*S,52*S,3*S,'#7d5020');
+  // Rigging lines
+  ctx.strokeStyle='rgba(160,130,60,.5)'; ctx.lineWidth=1*S;
+  ctx.beginPath(); ctx.moveTo(2*S,-52*S); ctx.lineTo(-28*S,-8*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2*S,-52*S); ctx.lineTo(28*S,-8*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-24*S,-50*S); ctx.lineTo(-28*S,-8*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(28*S,-50*S); ctx.lineTo(28*S,-8*S); ctx.stroke();
+
+  // Main sail
+  const sG=ctx.createLinearGradient(-24*S,-50*S,2*S,-20*S);
+  sG.addColorStop(0,'rgba(240,245,248,.92)');sG.addColorStop(.5,'rgba(210,225,235,.80)');sG.addColorStop(1,'rgba(175,200,218,.65)');
+  ctx.fillStyle=sG;
+  ctx.beginPath();ctx.moveTo(2*S,-52*S);ctx.quadraticCurveTo(-18*S,-38*S,2*S,-20*S);ctx.closePath();ctx.fill();
+  // Sail cloth seams
+  ctx.strokeStyle='rgba(160,180,195,.4)'; ctx.lineWidth=S*.7;
+  for(let s=1;s<4;s++){const sy=-52*S+s*8*S;ctx.beginPath();ctx.moveTo(2*S,sy);ctx.lineTo((-16+s*2)*S,sy+6*S);ctx.stroke();}
+  // Second small sail
+  const s2G=ctx.createLinearGradient(4*S,-48*S,26*S,-22*S);
+  s2G.addColorStop(0,'rgba(220,235,245,.8)');s2G.addColorStop(1,'rgba(180,205,220,.5)');
+  ctx.fillStyle=s2G;
+  ctx.beginPath();ctx.moveTo(4*S,-50*S);ctx.lineTo(24*S,-45*S);ctx.lineTo(24*S,-22*S);ctx.lineTo(4*S,-20*S);ctx.closePath();ctx.fill();
+
+  // Flag (green with wave detail)
+  ctx.fillStyle='#27ae60';
+  ctx.beginPath();ctx.moveTo(2*S,-52*S);ctx.lineTo(18*S,-47*S);ctx.lineTo(2*S,-42*S);ctx.closePath();ctx.fill();
+  px(2*S,-52*S,6*S,10*S,shade('#27ae60',15)); // flag highlight
+  // Wave on flag
+  ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=S;
+  ctx.beginPath();ctx.moveTo(4*S,-50*S);ctx.quadraticCurveTo(8*S,-48*S,12*S,-50*S);ctx.stroke();
+
+  // Fishing rod (starboard)
+  ctx.strokeStyle='#c09040'; ctx.lineWidth=2*S;
+  ctx.beginPath(); ctx.moveTo(24*S,-12*S); ctx.lineTo(40*S,-28*S); ctx.stroke();
+  // Rod guide rings
+  ctx.strokeStyle='#a07030'; ctx.lineWidth=S;
+  for(let r=0;r<3;r++){const rx=24*S+r*5*S,ry=-12*S-r*5*S;ctx.beginPath();ctx.arc(rx+3*S,ry-3*S,1.5*S,0,Math.PI*2);ctx.stroke();}
+
+  ctx.restore();
+}
+
+function initTitleCanvas(){
+  tc=document.getElementById('titleCanvas'); if(!tc)return;
+  tc.width=window.innerWidth; tc.height=window.innerHeight;
+  tw=tc.width; th=tc.height; tcx=tc.getContext('2d');
+  animTitle();
+}
+function animTitle(){
+  if(document.getElementById('title-screen').classList.contains('hidden'))return;
+  tt+=.016; tcx.clearRect(0,0,tw,th);
+  // Stars
+  for(let i=0;i<40;i++){
+    const sx=(i*137+50)%tw,sy=(i*79+20)%(th*.35);
+    tcx.fillStyle=`rgba(255,255,255,${.2+.3*Math.abs(Math.sin(tt+i))})`; tcx.fillRect(sx,sy,1,1);
+  }
+  // Waves
+  for(let w=0;w<5;w++){
+    const wy=th*.62+w*16+Math.sin(tt*1.2+w)*6;
+    tcx.strokeStyle=`rgba(93,173,226,${.06+.08*Math.sin(tt+w)})`; tcx.lineWidth=3;
+    tcx.beginPath(); tcx.moveTo(0,wy);
+    for(let x=0;x<=tw;x+=20) tcx.lineTo(x,wy+Math.sin(tt*1.5+x*.05+w)*7);
+    tcx.stroke();
+  }
+  // Fish on title
+  const pool=SPECIES.manglar;
+  for(let i=0;i<6;i++){
+    const fx=((i*tw/6+tt*35*(i%2?1:-1)+tw*2)%(tw+80))-40;
+    const fy=th*.57+Math.sin(tt+i)*12+i*7;
+    const sp=pool[i%pool.length];
+    tcx.save(); tcx.translate(Math.round(fx),Math.round(fy));
+    tcx.scale(tt%4<2?1:-1,1);
+    tcx.fillStyle=sp.belly; tcx.fillRect(-10,-5,16,10);
+    tcx.fillStyle=sp.color; tcx.fillRect(-10,-5,16,10);
+    tcx.fillStyle=sp.fin||'#888'; tcx.beginPath(); tcx.moveTo(6,0); tcx.lineTo(12,-5); tcx.lineTo(12,5); tcx.closePath(); tcx.fill();
+    tcx.fillStyle='#fff'; tcx.fillRect(-5,-2,3,3); tcx.fillStyle='#111'; tcx.fillRect(-4,-1,2,2);
+    tcx.restore();
+  }
+  requestAnimationFrame(animTitle);
+}
+
+// ─── GAME LOGIC ────────────────────────────────────────────
+function startGame(saved=null){
+  if(saved){
+    Object.assign(G,saved);
+    G.fishing=false; G.fishTimer=null; G.tickTimer=null; G.storm=false; G.stormTimer=null; G.ticks=0; G.xp=saved.xp||0; G.activeMissions=saved.activeMissions||[]; G.completedMissions=saved.completedMissions||[]; G._dayStartMoney=saved._dayStartMoney||G.money; G._dayStartCaught=saved._dayStartCaught||G.caught;
+  } else {
+    Object.assign(G,{running:false,day:1,hour:6,minute:0,season:0,weather:'sunny',temp:24,zone:'manglar',
+      method:'anzuelo',methodIdx:0,money:500,fuel:100,energy:100,hunger:100,thirst:100,eco:80,
+      caught:0,xp:0,activeMissions:[],completedMissions:[],inventory:[],logbook:{},_dayStartMoney:500,_dayStartCaught:0,fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0});
+  }
+  document.getElementById('title-screen').classList.add('hidden');
+  ['hud','bottom-panel','message-log','zone-indicator'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
+  G.running=true; G.tickTimer=setInterval(gameTick,6000); initMissions(); setupClickSounds();
+  updateZoneUI(); updateHUD();
+  logMsg('Bienvenido a Bahia Viva, pescador.','success');
+  logMsg('Elige tu zona y metodo para comenzar.','');
+  setTimeout(()=>logMsg('TIP: Cuida el ECO para no agotar el mar.','warn'),2000);
+  initFishEntities();
+}
+
+
+function showDaySummary(day){
+  if(day<=1)return; // skip day 1
+  const earned=(G.money||0)-(G._dayStartMoney||0);
+  const caught=(G.caught||0)-(G._dayStartCaught||0);
+  const ecoStatus=G.eco>70?'Excelente':'El mar necesita descanso';
+  openModal(`FIN DEL DIA ${day}`,`
+    <div style="text-align:center;padding:10px 0 4px">
+      <div style="font-family:var(--font-pixel);font-size:clamp(7px,1.2vw,10px);color:var(--gold);margin-bottom:14px;">Resumen del dia</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:#0a1a0a;border:2px solid #2a4020;padding:10px;">
+          <div style="font-family:var(--font-vt);font-size:clamp(22px,3.5vw,30px);color:var(--green);">${caught}</div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(4px,.75vw,6px);color:var(--sand);">CAPTURAS</div>
+        </div>
+        <div style="background:#0a100a;border:2px solid #2a3a10;padding:10px;">
+          <div style="font-family:var(--font-vt);font-size:clamp(22px,3.5vw,30px);color:${earned>=0?'var(--gold)':'var(--red)'};">${earned>=0?'+':''}${earned}</div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(4px,.75vw,6px);color:var(--sand);">PESOS</div>
+        </div>
+        <div style="background:#0a1410;border:2px solid #203a28;padding:10px;">
+          <div style="font-family:var(--font-vt);font-size:clamp(22px,3.5vw,30px);color:${G.eco>60?'var(--green)':G.eco>30?'var(--gold)':'var(--red)'};">${Math.round(G.eco)}%</div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(4px,.75vw,6px);color:var(--sand);">SALUD ECO</div>
+        </div>
+        <div style="background:#0a0e18;border:2px solid #1a2848;padding:10px;">
+          <div style="font-family:var(--font-vt);font-size:clamp(22px,3.5vw,30px);color:var(--wave);">${G.xp||0}</div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(4px,.75vw,6px);color:var(--sand);">XP TOTAL</div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:${G.eco>70?'var(--green)':'var(--gold)'};margin-bottom:8px;">
+        ${G.eco>70?'El mar esta sano. Buen trabajo.':G.eco>40?'El ecosistema necesita mas cuidado.':'ALERTA: Sobrepesca detectada.'}
+      </div>
+    </div>`);
+}
+function gameTick(){
+  if(!G.running)return;
+  G.ticks++; G.minute+=20;
+  if(G.minute>=60){G.minute=0;G.hour++;}
+  if(G.hour>=24){
+    G.hour=6;
+    showDaySummary(G.day); // show before incrementing
+    G.day++;
+    G.eco=Math.min(100,G.eco+2);
+    if(G.day%30===1){G.season=(G.season+1)%4;logMsg('Nueva temporada: '+G.seasons[G.season],'success');initFishEntities();}
+    logMsg('Dia '+G.day+'. El oceano se recupera.','success');
+    G._dayStartMoney=G.money; G._dayStartCaught=G.caught;
+  }
+  G.temp=Math.round([22,30,18,14][G.season]+Math.sin((G.hour-6)/12*Math.PI)*6);
+  if(G.ticks%14===0)changeWeather();
+  G.energy=Math.max(0,G.energy-1); G.hunger=Math.max(0,G.hunger-.8); G.thirst=Math.max(0,G.thirst-1.2);
+  if(G.zone==='abierto')G.fuel=Math.max(0,G.fuel-.5);
+  if(G.hunger<15&&G.ticks%4===0)logMsg('Sin comida. Ve al mercado.','danger');
+  if(G.thirst<15&&G.ticks%4===0)logMsg('Sin agua. Hidratate.','danger');
+  if(G.energy<10)logMsg('Agotado. Descansa.','danger');
+  const ecow=document.getElementById('eco-warning');
+  const wasHidden=ecow.style.display==='none';
+  ecow.style.display=G.eco<20?'block':'none';
+  if(G.eco<20&&wasHidden) SFX.alert();
+  if(G.eco<70&&G.ticks%6===0)G.eco=Math.min(100,G.eco+.4);
+  updateHUD();
+}
+
+function changeWeather(){
+  const l=['sunny','sunny','sunny','cloudy','windy'];
+  if(Math.random()<.12&&G.zone==='abierto'){startStorm();return;}
+  const p=G.weather; G.weather=l[Math.floor(Math.random()*l.length)];
+  const wNames={sunny:'Soleado ☀️',cloudy:'Nublado ☁️',windy:'Ventoso 💨'};
+  if(G.weather!==p){logMsg('Tiempo: '+(wNames[G.weather]||G.weather),''); if(G.weather==='windy')SFX.alert();}
+}
+function startStorm(){
+  if(G.storm)return; G.storm=true; G.weather='storm';
+  document.getElementById('storm-overlay').classList.add('active');
+  logMsg('TORMENTA! Vuelve a la costa de inmediato.','danger'); SFX.storm();
+  G.stormTimer=setTimeout(()=>{G.storm=false;G.weather='sunny';document.getElementById('storm-overlay').classList.remove('active');logMsg('La tormenta paso.','success');},90000);
+}
+
+function changeZone(z){
+  if(G.storm){logMsg('No puedes salir con la tormenta.','danger');return;}
+  if(G.fuel<ZONE_INFO[z].fuelCost){logMsg('Sin combustible suficiente.','warn');return;}
+  G.zone=z; G.fuel=Math.max(0,G.fuel-ZONE_INFO[z].fuelCost);
+  // Update zone button highlights
+  ['manglar','arrecife','abierto'].forEach(zn=>{
+    const b=document.getElementById('btn-z-'+zn);
+    if(b) b.classList.toggle('active',zn===z);
+  });
+  updateZoneUI(); logMsg('Navegaste al '+ZONE_INFO[z].name+'.',''); initFishEntities(); updateHUD();
+}
+function updateZoneUI(){const zi=ZONE_INFO[G.zone];document.getElementById('zone-name').textContent=zi.name;document.getElementById('zone-species').textContent=zi.species;}
+
+function changeMethod(){
+  G.methodIdx=(G.methodIdx+1)%G.methods.length; G.method=G.methods[G.methodIdx];
+  const mi=METHOD_INFO[G.method];
+  document.getElementById('btn-fish').textContent=mi.label+' - PESCAR';
+  document.getElementById('btn-method').textContent=mi.label;
+  logMsg('Metodo: '+mi.label+(mi.eco>2?' (alto ECO)':''),'');
+}
+
+// ─── SELECCION DE TIPO DE PEZ ───────────────────────────────
+let _selectedFishType=null;
+
+function openFishSelect(){
+  const pool=SPECIES[G.zone];
+  const container=document.getElementById('fish-options-container');
+  container.innerHTML='';
+  _selectedFishType=null;
+  
+  // Agregar opción de cualquier pez (aleatorio)
+  const anyOption=document.createElement('div');
+  anyOption.className='fish-option';
+  anyOption.onclick=()=>selectFishType(null,anyOption);
+  anyOption.innerHTML=`
+    <canvas class="fish-option-icon" width="32" height="24"></canvas>
+    <div class="fish-option-info">
+      <div class="fish-option-name" style="color:var(--gold)">★ CUALQUIER PEZ</div>
+      <div class="fish-option-details">Azar según probabilidad</div>
+      <div class="fish-option-value">Sin bonus</div>
+    </div>
+  `;
+  container.appendChild(anyOption);
+  
+  // Agregar opciones de cada especie
+  pool.forEach((sp,idx)=>{
+    const opt=document.createElement('div');
+    opt.className='fish-option';
+    opt.onclick=()=>selectFishType(sp,opt);
+    // Icono simple
+    const canvas=opt.querySelector('canvas')||document.createElement('canvas');
+    canvas.width=32;canvas.height=24;
+    const cx=canvas.getContext('2d');
+    cx.fillStyle=sp.color;cx.beginPath();cx.ellipse(16,12,12,6,0,0,Math.PI*2);cx.fill();
+    cx.fillStyle=sp.belly;cx.beginPath();cx.ellipse(16,12,8,4,0,0,Math.PI*2);cx.fill();
+    
+    const minVal=sp.value[0]||0;
+    const maxVal=sp.value[1]||0;
+    const valStr=minVal>0?`$${minVal}-${maxVal}`:'Liberado';
+    
+    opt.innerHTML=`
+      <canvas class="fish-option-icon" width="32" height="24"></canvas>
+      <div class="fish-option-info">
+        <div class="fish-option-name">${sp.name}${sp.rare?' ★':''}</div>
+        <div class="fish-option-details">${sp.desc?sp.desc.substring(0,40)+'...':''}</div>
+        <div class="fish-option-value">Valor: ${valStr}</div>
+      </div>
+    `;
+    container.appendChild(opt);
+  });
+  
+  document.getElementById('fish-select-overlay').classList.add('show');
+}
+
+function selectFishType(sp,el){
+  document.querySelectorAll('.fish-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  _selectedFishType=sp;
+}
+
+function closeFishSelect(){
+  document.getElementById('fish-select-overlay').classList.remove('show');
+  _selectedFishType=null;
+}
+
+function confirmFishSelection(){
+  closeFishSelect();
+  // Iniciar pesca con el tipo seleccionado
+  startFishingWithType(_selectedFishType);
+}
+
+function startFishingWithType(preferredFish){
+  if(G.fishing){logMsg('Ya estas pescando.','warn');return;}
+  if(G.storm){logMsg('No puedes pescar en la tormenta.','danger');return;}
+  if(G.energy<5){logMsg('Sin energia.','danger');return;}
+  if(G.inventory.length>=20){logMsg('Inventario lleno.','warn');return;}
+  
+  const mt=METHOD_INFO[G.method];
+  G.fishing=true;
+  const btn=document.getElementById('btn-fish');
+  btn.classList.add('fishing');
+  btn.textContent='Pescando...'; 
+  SFX.cast();
+  
+  const hm=(G.hour>=5&&G.hour<=8)||(G.hour>=17&&G.hour<=20)?.8:1;
+  const tm=G.temp>28?1.15:G.temp<18?.85:1;
+  
+  G.fishTimer=setTimeout(()=>{
+    G.fishing=false; 
+    btn.classList.remove('fishing'); 
+    btn.textContent=METHOD_INFO[G.method].label+' - Pescar';
+    G.energy=Math.max(0,G.energy-8);
+    
+    if(Math.random()<mt.miss*hm){
+      logMsg('El pez se escapo...','');
+      SFX.miss();
+      updateHUD();
+      return;
+    }
+    
+    const pool=SPECIES[G.zone];
+    let ch;
+    
+    if(preferredFish){
+      // Buscar el pez seleccionado
+      const found=pool.find(s=>s.name===preferredFish.name);
+      if(found && Math.random()<0.6){
+        // 60% de probabilidad de pescar el pez elegido
+        ch=found;
+      }else{
+        // 40% de probabilidad de pez aleatorio
+        const wts=pool.map(s=>s.rarity*(mt.bonus?.[G.zone]||1)*tm);
+        const tot=wts.reduce((a,b)=>a+b,0);
+        let r=Math.random()*tot;
+        for(let i=0;i<pool.length;i++){
+          r-=wts[i];
+          if(r<=0){ch=pool[i];break;}
+        }
+      }
+    }else{
+      // Cualquier pez (aleatorio)
+      const wts=pool.map(s=>s.rarity*(mt.bonus?.[G.zone]||1)*tm);
+      const tot=wts.reduce((a,b)=>a+b,0);
+      let r=Math.random()*tot;
+      for(let i=0;i<pool.length;i++){
+        r-=wts[i];
+        if(r<=0){ch=pool[i];break;}
+      }
+    }
+    
+    if(!ch)ch=pool[0];
+    
+    G.eco=Math.max(0,G.eco-mt.eco*ch.eco);
+    if(ch.rare){ showRareEvent(ch); updateHUD(); return; }
+    if(ch.release){ logMsg(ch.name+' encontrado. Especie protegida, liberado.','success'); recordLB(ch); updateHUD(); return; }
+    
+    // Launch minigame for normal catches
+    startFishingMiniGame((bonus)=>{
+      const baseW=ch.weight[0]+Math.random()*(ch.weight[1]-ch.weight[0]);
+      const w=(baseW*bonus).toFixed(1);
+      const baseVal=Math.round(ch.value[0]+Math.random()*(ch.value[1]-ch.value[0]));
+      const val=Math.round(baseVal*bonus);
+      const ex=G.inventory.find(i=>i.name===ch.name);
+      if(ex){ex.qty++;ex.totalValue+=val;}else G.inventory.push({name:ch.name,sp:ch,qty:1,totalValue:val,unitValue:val});
+      G.caught++; recordLB(ch); showCatchPopup(ch,w,val); spawnParticles(ch); SFX.catch(); checkMissionProgress(ch.name); addXP(Math.round(5+ch.eco*3+(bonus>=1.4?15:bonus>=1.2?8:0)));
+      logMsg('Capturaste: '+ch.name+' | '+w+'kg | $'+val+(bonus>=1.4?' ★PERFECTO':''),'success');
+      updateHUD();
+    });
+  },mt.time*hm);
+}
+
+function fish(){
+  // Abrir modal de selección de tipo de pez
+  if(G.fishing){logMsg('Ya estas pescando.','warn');return;}
+  if(G.storm){logMsg('No puedes pescar en la tormenta.','danger');return;}
+  if(G.energy<5){logMsg('Sin energia.','danger');return;}
+  if(G.inventory.length>=20){logMsg('Inventario lleno.','warn');return;}
+  openFishSelect();
+}
+
+function recordLB(sp){
+  const isNew=!G.logbook[sp.name];
+  if(isNew){G.logbook[sp.name]={count:0,sp,rare:sp.rare||false};}
+  G.logbook[sp.name].count++;
+  if(isNew) showLogbookEntry(sp);
+}
+
+function showLogbookEntry(sp){
+  const overlay=document.getElementById('logbook-entry-overlay');
+  const canvas=document.getElementById('lb-entry-canvas');
+  const nameEl=document.getElementById('lb-entry-name');
+  const descEl=document.getElementById('lb-entry-desc');
+  const zoneEl=document.getElementById('lb-entry-zone');
+  if(!overlay)return;
+  nameEl.textContent=sp.name+(sp.rare?' ★':'');
+  descEl.textContent=sp.desc||'Especie capturada.';
+  zoneEl.textContent=sp.release?'[ LIBERADO — Especie protegida ]':'[ Registrado en Bitacora ]';
+  // Draw fish on canvas
+  const cx=canvas.getContext('2d');
+  cx.clearRect(0,0,120,90);
+  cx.fillStyle='rgba(0,20,40,0.7)'; cx.fillRect(0,0,120,90);
+  // bubbles
+  for(let i=0;i<8;i++){
+    cx.strokeStyle=`rgba(100,200,255,${0.15+i*.04})`;cx.lineWidth=1;
+    cx.beginPath();cx.arc(15+i*14,70-i*6,3+i%3,0,Math.PI*2);cx.stroke();
+  }
+  cx.save(); cx.translate(60,48);
+  // Use drawFish but on a different context — recreate simplified version
+  const s=3.5;
+  if(sp.crab){
+    cx.fillStyle=sp.color;cx.beginPath();cx.arc(0,0,12*s*.6,0,Math.PI*2);cx.fill();
+    cx.fillStyle=sp.belly;cx.beginPath();cx.arc(0,0,6*s*.6,0,Math.PI*2);cx.fill();
+    cx.fillStyle=sp.fin;cx.fillRect(-12*s*.6,-4,-8*s*.5,4);cx.fillRect(8*s*.5,-4,8*s*.5,4);
+  } else if(sp.octopus){
+    cx.fillStyle=sp.color;cx.beginPath();cx.ellipse(0,-4,8*s*.5,11*s*.5,0,0,Math.PI*2);cx.fill();
+    for(let t=0;t<4;t++){cx.fillStyle=sp.color;cx.fillRect((-6+t*4)*s*.45,6,s*.8,(5+t%2*3)*s*.45);}
+    cx.fillStyle='#fff';cx.fillRect(-4,-6,3,3);cx.fillRect(2,-6,3,3);
+  } else if(sp.shrimp||sp.lobster){
+    cx.fillStyle=sp.color;cx.beginPath();cx.ellipse(0,0,11*s*.5,5*s*.5,0,0,Math.PI*2);cx.fill();
+    cx.fillStyle=sp.fin;cx.fillRect(-14*s*.5,-2,5*s*.5,3);cx.fillRect(10*s*.5,-2,5*s*.5,3);
+  } else {
+    // Fish body
+    cx.fillStyle=sp.belly;cx.beginPath();cx.ellipse(0,0,11*s*.5,6*s*.5,0,0,Math.PI*2);cx.fill();
+    cx.fillStyle=sp.color;cx.beginPath();cx.ellipse(0,0,11*s*.5,6*s*.5,0,Math.PI,0);cx.fill();
+    // Dorsal
+    cx.fillStyle=sp.fin;cx.beginPath();cx.moveTo(-6*s*.5,-6*s*.5);cx.lineTo(-9*s*.5,-12*s*.5);cx.lineTo(2*s*.5,-10*s*.5);cx.lineTo(4*s*.5,-6*s*.5);cx.closePath();cx.fill();
+    // Tail
+    cx.beginPath();cx.moveTo(9*s*.5,-2);cx.lineTo(15*s*.5,-7*s*.5);cx.lineTo(15*s*.5,7*s*.5);cx.closePath();cx.fill();
+    // Eye
+    cx.fillStyle='#fff';cx.beginPath();cx.arc(-6*s*.5,-1,3,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#111';cx.beginPath();cx.arc(-5.5*s*.5,-1,2,0,Math.PI*2);cx.fill();
+    cx.fillStyle='rgba(255,255,255,.7)';cx.beginPath();cx.arc(-5*s*.5,-2,1,0,Math.PI*2);cx.fill();
+  }
+  cx.restore();
+  overlay.classList.add('show');
+  clearTimeout(overlay._hideTimer);
+  overlay._hideTimer=setTimeout(()=>overlay.classList.remove('show'),4500);
+}
+
+function showCatchPopup(sp,weight,value){
+  const c=document.getElementById('catchCanvas'),cx=c.getContext('2d');
+  cx.clearRect(0,0,64,48);
+  // Background
+  cx.fillStyle='rgba(0,30,50,.7)'; cx.fillRect(0,0,64,48);
+  cx.save(); cx.translate(32,28);
+  const sc=2.2;
+  if(sp.crab){
+    cx.fillStyle=sp.color; cx.beginPath(); cx.arc(0,0,10,0,Math.PI*2); cx.fill();
+    cx.fillStyle=sp.belly; cx.beginPath(); cx.arc(0,0,5,0,Math.PI*2); cx.fill();
+  } else if(sp.octopus||sp.squid){
+    cx.fillStyle=sp.color; cx.beginPath(); cx.ellipse(0,-3,7,9,0,0,Math.PI*2); cx.fill();
+    for(let t=0;t<4;t++){cx.fillStyle=sp.color;cx.fillRect((-5+t*3),6,2,6+t%2*2);}
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(-2,-4,2,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#111'; cx.beginPath(); cx.arc(-2,-4,1,0,Math.PI*2); cx.fill();
+  } else if(sp.lobster||sp.shrimp){
+    cx.fillStyle=sp.color; cx.beginPath(); cx.ellipse(0,0,12,5,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle=sp.belly; cx.beginPath(); cx.ellipse(0,2,6,3,0,0,Math.PI*2); cx.fill();
+    cx.strokeStyle=sp.fin; cx.lineWidth=1.5; cx.beginPath(); cx.moveTo(-12,-2); cx.lineTo(-18,-6); cx.stroke();
+    cx.beginPath(); cx.moveTo(-12,0); cx.lineTo(-17,4); cx.stroke();
+  } else {
+    // Full detailed fish
+    cx.fillStyle=sp.belly;
+    cx.beginPath(); cx.ellipse(0,0,10*sc*.7,5.5*sc*.7,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle=sp.color;
+    cx.beginPath(); cx.ellipse(0,0,10*sc*.7,5.5*sc*.7,0,Math.PI,0); cx.fill();
+    // Dorsal fin
+    cx.fillStyle=sp.fin;
+    cx.beginPath(); cx.moveTo(-4,-5.5*sc*.7); cx.lineTo(-7,-5.5*sc*.7-5); cx.lineTo(2,-5.5*sc*.7-3); cx.lineTo(4,-5.5*sc*.7); cx.closePath(); cx.fill();
+    // Tail
+    cx.beginPath(); cx.moveTo(7*sc*.7,0); cx.lineTo(11*sc*.7,-5); cx.lineTo(11*sc*.7,5); cx.closePath(); cx.fill();
+    // Scales
+    cx.strokeStyle='rgba(0,0,0,.12)'; cx.lineWidth=.8;
+    for(let r=0;r<2;r++) for(let col=0;col<3;col++){cx.beginPath();cx.arc((-5+col*4)*sc*.7,(-1+r*3)*sc*.7,2.2*sc*.7,Math.PI,0);cx.stroke();}
+    // Highlight
+    cx.fillStyle='rgba(255,255,255,.22)';
+    cx.beginPath(); cx.ellipse(-2,-2,5,2.5,-.3,0,Math.PI*2); cx.fill();
+    // Eye
+    cx.fillStyle='#e8e8d0'; cx.beginPath(); cx.arc(-6*sc*.7,-1,2.8,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#1a1a2a'; cx.beginPath(); cx.arc(-6*sc*.7,-1,1.6,0,Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(255,255,255,.75)'; cx.beginPath(); cx.arc(-6*sc*.7-1,-1.7,.8,0,Math.PI*2); cx.fill();
+  }
+  cx.restore();
+  document.getElementById('catch-name').textContent=sp.name;
+  document.getElementById('catch-value').textContent='+$'+value+' | '+weight+' kg';
+  const cdEl=document.getElementById('catch-desc');
+  if(cdEl) cdEl.textContent=sp.desc?sp.desc.slice(0,80)+'…':'';
+  // Show desc briefly
+  const descEl=document.getElementById('catch-desc');
+  if(descEl) descEl.textContent=sp.desc?sp.desc.slice(0,60)+'…':'';
+  const p=document.getElementById('catch-popup'); p.classList.add('show');
+  setTimeout(()=>p.classList.remove('show'),3200);
+}
+
+function showRareEvent(sp){ SFX.rare();
+  recordLB(sp); logMsg('EVENTO RARO! '+sp.name+' avistado!','rare'); G.eco=Math.min(100,G.eco+10); updateHUD();
+  openModal('AVISTAMIENTO RARO',`
+    <div style="text-align:center;padding:14px;">
+      <canvas id="rareC" width="100" height="80" style="display:block;margin:0 auto;border:2px solid var(--gold)"></canvas>
+      <div style="font-family:var(--font-vt);font-size:20px;color:var(--wave);margin:8px 0;">${sp.name}</div>
+      <div style="font-family:var(--font-vt);font-size:15px;color:var(--sand);line-height:1.6;">
+        Avistamiento extraordinario. Esta especie es vital para el ecosistema.<br>
+        Registrado en tu bitacora.<br><br>
+        <b style="color:var(--green)">+10 puntos ECO</b>
+      </div>
+    </div>`);
+  setTimeout(()=>{const rc=document.getElementById('rareC');if(rc){const rx=rc.getContext('2d');rx.save();rx.translate(50,40);drawFish.call(null,0,0,sp,3,true);rx.restore();}},80);
+}
+
+function spawnParticles(sp){
+  for(let i=0;i<4;i++) particles.push({x:boatX+(Math.random()-.5)*30,y:boatY-10,vx:(Math.random()-.5)*2.5,vy:-(2+Math.random()*2.5),sp,life:1});
+}
+
+function rest(){
+  if(G.energy>=100&&G.hunger>=100&&G.thirst>=100){logMsg('Ya estas descansado.','');return;}
+  G.energy=Math.min(100,G.energy+40);G.hunger=Math.min(100,G.hunger+20);G.thirst=Math.min(100,G.thirst+30);
+  G.hour=Math.min(23,G.hour+4); logMsg('Descansaste. Energia recuperada.','success'); updateHUD();
+}
+
+function openCantina(){
+  // Dynamic deals that change each day
+  const deals=[
+    {id:'deal_fuel',  name:'Trueque: Combustible',  desc:'Cambia 3 capturas por tanque lleno',
+     action:()=>{
+       if(G.inventory.length<3){logMsg('Necesitas al menos 3 capturas para el trato.','warn');return;}
+       G.inventory.splice(0,3); G.fuel=Math.min(100,G.fuel+60);
+       logMsg('Trato cerrado! +60% combustible a cambio de 3 capturas.','success'); openCantina();
+     }},
+    {id:'deal_energy',name:'Sopa del dia',           desc:'Gasta $60 y recuperas toda la energia y el hambre',
+     action:()=>{
+       if(G.money<60){logMsg('No tienes suficiente dinero.','danger');return;}
+       G.money-=60; G.energy=100; G.hunger=100;
+       logMsg('Sopa caliente! Energia y hambre al maximo.','success'); openCantina();
+     }},
+    {id:'deal_info',  name:'Informacion del capitan',desc:'Gasta $120 y el capitan revela la mejor zona segun el clima',
+     action:()=>{
+       if(G.money<120){logMsg('No tienes suficiente dinero.','danger');return;}
+       G.money-=120;
+       const best=G.temp>26?'abierto':G.temp<20?'manglar':'arrecife';
+       const tips={abierto:'Mar caliente: los atunes se acercan a la superficie.',manglar:'Agua fresca: ideal para robalo y camaron.',arrecife:'Temperatura perfecta para el arrecife.'};
+       logMsg('Capitan: '+tips[best],'success'); changeZone(best); openCantina();
+     }},
+    {id:'deal_eco',   name:'Donacion al ecosistema', desc:'Dona $200 y el ECO sube 20 puntos',
+     action:()=>{
+       if(G.money<200){logMsg('No tienes suficiente dinero.','danger');return;}
+       G.money-=200; G.eco=Math.min(100,G.eco+20);
+       logMsg('Donacion aceptada! El oceano te lo agradece.','success'); updateHUD(); openCantina();
+     }},
+    {id:'deal_coop',  name:'Convenio cooperativa',   desc:'Vende TODA tu captura con 20% de bonificacion',
+     action:()=>{
+       if(!G.inventory.length){logMsg('No tienes nada que vender.','warn');return;}
+       let total=0;
+       G.inventory.forEach(it=>total+=it.totalValue);
+       const bonus=Math.round(total*0.2);
+       G.money+=total+bonus; G.inventory=[];
+       logMsg(`Convenio cerrado! $${total} + $${bonus} de bonus.`,'success'); updateHUD(); openCantina();
+     }},
+    {id:'deal_water', name:'Agua fresca del pozo',   desc:'Gasta $30 y recuperas toda la sed',
+     action:()=>{
+       if(G.money<30){logMsg('No tienes suficiente dinero.','danger');return;}
+       G.money-=30; G.thirst=100;
+       logMsg('Agua de pozo! Sed al maximo.','success'); openCantina();
+     }},
+  ];
+
+  const night=G.hour>20||G.hour<7;
+  const ambiance=night
+    ? '<div style="color:#a090c0;font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);margin-bottom:12px;">La cantina esta llena de pescadores. El acordeon suena en el rincon.</div>'
+    : '<div style="color:#c0a060;font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);margin-bottom:12px;">Pocos clientes a esta hora. La cocinera te ofrece algo de tomar.</div>';
+
+  const dealsHtml=deals.map((d,i)=>`
+    <div style="background:var(--ocean-mid);border:2px solid rgba(224,168,32,.35);padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div>
+        <div style="font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);color:#e0a820;margin-bottom:4px;">${d.name}</div>
+        <div style="font-family:var(--font-vt);font-size:clamp(12px,1.7vw,15px);color:var(--sand);">${d.desc}</div>
+      </div>
+      <button onclick="cantinaDeals[${i}].action()" style="font-family:var(--font-pixel);font-size:clamp(5px,.8vw,7px);padding:6px 10px;background:transparent;border:2px solid #e0a820;color:#e0a820;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background='#e0a820';this.style.color='#0a1628'" onmouseout="this.style.background='transparent';this.style.color='#e0a820'">ACEPTAR</button>
+    </div>`).join('');
+
+  window.cantinaDeals=deals;
+  openModal('LA CANTINA — TRATOS DEL DIA',`
+    <div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);">
+      ${ambiance}
+      <div style="color:var(--gold);margin-bottom:10px;font-size:clamp(5px,.9vw,8px);font-family:var(--font-pixel)">Tus recursos: $${G.money} | Capturas: ${G.inventory.length} | ECO: ${Math.round(G.eco)}%</div>
+      ${dealsHtml}
+    </div>`);
+}
+
+function openMarket(){
+  const si=G.inventory.map(it=>`
+    <div class="shop-item">
+      <canvas width="32" height="24" id="mi_${it.name.replace(/\s/g,'_')}" style="flex-shrink:0"></canvas>
+      <div class="shop-item-name">${it.name} x${it.qty}</div>
+      <div class="shop-item-price">$${it.unitValue||Math.round(it.totalValue/it.qty)} c/u</div>
+      <div style="display:flex;gap:4px">
+        <button class="shop-buy-btn" onclick="sellItem('${it.name}')">UNO</button>
+        <button class="shop-buy-btn" style="background:var(--ocean-surf);border-color:var(--wave)" onclick="sellAllItem('${it.name}')">TODO</button>
+      </div>
+    </div>`).join('');
+  const supp=`
+    <div style="margin-top:14px;border-top:2px solid var(--ui-border);padding-top:10px;">
+      <div style="color:var(--wave);font-size:clamp(6px,1vw,9px);margin-bottom:7px;">TIENDA DE SUMINISTROS</div>
+      ${[['Comida','food',80,'#e07828'],['Agua','water',40,'#3498db'],['Combustible','fuel',150,'#f1c40f'],['Linea Premium','line',300,'#9b59b6']].map(([n,k,p,c])=>`
+      <div class="shop-item">
+        <div style="width:14px;height:14px;background:${c};border:2px solid rgba(255,255,255,.3);flex-shrink:0"></div>
+        <div class="shop-item-name">${n}</div>
+        <div class="shop-item-price">$${p}</div>
+        <button class="shop-buy-btn" onclick="buySupply('${k}')">COMPRAR</button>
+      </div>`).join('')}
+    </div>`;
+  openModal('MERCADO DE BAHIA VIVA',`
+    <div style="font-family:var(--font-vt);font-size:clamp(12px,1.7vw,15px);">
+      <div style="color:var(--gold);margin-bottom:7px;">Dinero: $${G.money}</div>
+      <div style="color:var(--wave);margin-bottom:5px;font-size:clamp(6px,1vw,9px)">TU CAPTURA</div>
+      ${si||'<div style="color:#5a7a8a;font-family:var(--font-vt)">No hay nada para vender.</div>'}${supp}
+    </div>`);
+  setTimeout(()=>{
+    G.inventory.forEach(it=>{
+      const mc=document.getElementById('mi_'+it.name.replace(/\s/g,'_'));
+      if(mc&&it.sp){const mx=mc.getContext('2d');mx.save();mx.translate(16,14);
+        mx.fillStyle=it.sp.belly||it.sp.color; mx.fillRect(-9,-5,14,10);
+        mx.fillStyle=it.sp.color; mx.fillRect(-9,-5,14,10);
+        mx.fillStyle=it.sp.fin||'#888'; mx.beginPath();mx.moveTo(5,0);mx.lineTo(9,-4);mx.lineTo(9,4);mx.closePath();mx.fill();
+        mx.restore();}
+    });
+  },80);
+}
+
+function sellItem(name){
+  const idx=G.inventory.findIndex(i=>i.name===name);if(idx===-1)return;
+  const it=G.inventory[idx],p=it.unitValue||Math.round(it.totalValue/it.qty);
+  G.money+=p;it.qty--;it.totalValue-=p;if(it.qty<=0)G.inventory.splice(idx,1);
+  logMsg('Vendiste 1 '+name+' por $'+p,'success');SFX.sell();openMarket();updateHUD();
+}
+function sellAllItem(name){
+  const idx=G.inventory.findIndex(i=>i.name===name);if(idx===-1)return;
+  const tv=G.inventory[idx].totalValue;G.money+=tv;G.inventory.splice(idx,1);
+  logMsg('Vendiste todo por $'+tv,'success');SFX.sell();openMarket();updateHUD();
+}
+function buySupply(type){
+  const c={food:80,water:40,fuel:150,line:300};
+  if(G.money<c[type]){logMsg('Sin dinero suficiente.','danger');SFX.alert();return;}
+  G.money-=c[type];
+  if(type==='food'){G.hunger=Math.min(100,G.hunger+60);logMsg('+60 Hambre','success');}
+  if(type==='water'){G.thirst=Math.min(100,G.thirst+60);logMsg('+60 Sed','success');}
+  if(type==='fuel'){G.fuel=Math.min(100,G.fuel+50);logMsg('+50% Combustible','success');}
+  if(type==='line')logMsg('Linea premium equipada.','success');
+  openMarket();updateHUD();
+}
+
+function openLogbook(){
+  const ents=Object.entries(G.logbook);
+  if(!ents.length){openModal('BITACORA CIENTIFICA','<div style="font-family:var(--font-vt);font-size:15px;color:#5a7a8a">Aun no has registrado ninguna especie. iSal a pescar!</div>');return;}
+  const html=ents.map(([n,d])=>{
+    const safeN=n.replace(/\s/g,'_');
+    const desc=d.sp&&d.sp.desc?d.sp.desc:'';
+    const rareTag=d.rare?'<span style="color:#d2a8f0;font-size:clamp(8px,1.2vw,10px)"> ★ RARA</span>':'';
+    return `<div class="logbook-entry" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:8px;background:var(--ocean-mid);border-left:3px solid var(--green);">
+      <canvas width="56" height="44" id="lb_${safeN}" style="flex-shrink:0;border:2px solid rgba(255,255,255,.1);border-radius:2px;background:rgba(0,30,50,.5)"></canvas>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-pixel);font-size:clamp(5px,.9vw,8px);color:var(--wave);margin-bottom:4px;">${n}${rareTag}</div>
+        <div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:var(--sand);line-height:1.4;">${desc}</div>
+        <div style="font-family:var(--font-vt);font-size:clamp(10px,1.5vw,13px);color:var(--gold);margin-top:4px;">Capturas: ${d.count}</div>
+      </div>
+    </div>`;
+  }).join('');
+  openModal('BITACORA CIENTIFICA',`
+    <div style="font-family:var(--font-pixel);font-size:clamp(5px,.9vw,8px);color:var(--sand);margin-bottom:10px;">Especies registradas: <b style="color:var(--gold)">${ents.length}</b></div>
+    ${html}
+    <div style="margin-top:10px;color:var(--green);font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);">
+      Nivel: ${ents.length>=10?'Investigador Experto':ents.length>=5?'Buena Coleccion':'Iniciando'}
+    </div>`);
+  setTimeout(()=>{
+    ents.forEach(([n,d])=>{
+      const lc=document.getElementById('lb_'+n.replace(/\s/g,'_'));
+      if(lc&&d.sp){
+        const lx=lc.getContext('2d');
+        lx.clearRect(0,0,56,44);
+        lx.save(); lx.translate(28,22);
+        // Draw fish at scale 2.2 centered
+        const sp=d.sp;
+        const sc=2.2;
+        if(sp.crab){
+          lx.fillStyle=sp.color; lx.beginPath(); lx.arc(0,0,10*sc*.7,0,Math.PI*2); lx.fill();
+        } else if(sp.octopus||sp.squid){
+          lx.fillStyle=sp.color; lx.beginPath(); lx.ellipse(0,-4,7*sc*.7,10*sc*.7,0,0,Math.PI*2); lx.fill();
+          for(let t=0;t<4;t++) lx.fillRect((-6+t*4)*sc*.5,6,sc*.9*sc*.5,(5+t%2*3)*sc*.5);
+        } else if(sp.lobster||sp.shrimp){
+          lx.fillStyle=sp.color; lx.beginPath(); lx.ellipse(0,0,10*sc*.7,5*sc*.7,0,0,Math.PI*2); lx.fill();
+        } else {
+          // Full fish body
+          lx.fillStyle=sp.belly;
+          lx.beginPath(); lx.ellipse(0,0,10*sc*.7,5.5*sc*.7,0,0,Math.PI*2); lx.fill();
+          lx.fillStyle=sp.color;
+          lx.beginPath(); lx.ellipse(0,0,10*sc*.7,5.5*sc*.7,0,Math.PI,0); lx.fill();
+          // Dorsal fin
+          lx.fillStyle=sp.fin;
+          lx.beginPath(); lx.moveTo(-5,-5.5*sc*.7); lx.lineTo(-8,-5.5*sc*.7-5); lx.lineTo(0,-5.5*sc*.7-4); lx.lineTo(3,-5.5*sc*.7); lx.closePath(); lx.fill();
+          // Tail
+          lx.beginPath(); lx.moveTo(7,0); lx.lineTo(12,-5); lx.lineTo(12,5); lx.closePath(); lx.fill();
+          // Highlight
+          lx.fillStyle='rgba(255,255,255,.2)';
+          lx.beginPath(); lx.ellipse(-2,-2,5,2.5,-.3,0,Math.PI*2); lx.fill();
+          // Eye
+          lx.fillStyle='#e8e8d0'; lx.beginPath(); lx.arc(-6,-1,2.5,0,Math.PI*2); lx.fill();
+          lx.fillStyle='#1a1a2a'; lx.beginPath(); lx.arc(-6,-1,1.5,0,Math.PI*2); lx.fill();
+          lx.fillStyle='rgba(255,255,255,.7)'; lx.beginPath(); lx.arc(-6.5,-1.5,0.7,0,Math.PI*2); lx.fill();
+        }
+        lx.restore();
+      }
+    });
+  },80);
+}
+
+function updateHUD(){
+  updateRepHUD();
+  // Actualizar indicador de método en botón de pescar
+  const btnF=document.getElementById('btn-fish');
+  if(btnF&&!G.fishing){
+    const mi=METHOD_INFO[G.method];
+    btnF.textContent=mi.label.toUpperCase();
+  }
+  document.getElementById('hud-money').textContent='$'+G.money;
+  document.getElementById('hud-fuel').textContent=Math.round(G.fuel)+'%';
+  document.getElementById('hud-caught').textContent=G.caught;
+  document.getElementById('hud-inv').textContent=G.inventory.length;
+  document.getElementById('hud-day').textContent=G.day;
+  const hh=String(G.hour).padStart(2,'0'),mm=String(G.minute).padStart(2,'0');
+  document.getElementById('hud-time').textContent=hh+':'+mm;
+  document.getElementById('hud-season').textContent=G.seasons[G.season];
+  document.getElementById('hud-weather').textContent={sunny:'Soleado',cloudy:'Nublado',windy:'Ventoso',storm:'TORMENTA'}[G.weather]||'Soleado';
+  document.getElementById('hud-temp').textContent=G.temp+' C';
+  ['energy','hunger','thirst'].forEach(k=>document.getElementById('bar-'+k).style.width=G[k]+'%');
+  document.getElementById('bar-eco').style.width=G.eco+'%';
+  const eb=document.getElementById('bar-eco');
+  eb.style.background=G.eco<30?'#e74c3c':G.eco<60?'linear-gradient(90deg,#e67e22,#f1c40f)':'linear-gradient(90deg,#e74c3c,#27ae60)';
+  const ecoPct=document.getElementById('eco-pct'); if(ecoPct) ecoPct.textContent=Math.round(G.eco)+'%'; ecoPct&&(ecoPct.style.color=G.eco<30?'#e74c3c':G.eco<60?'#f1c40f':'#27ae60');
+}
+
+function logMsg(t,tp=''){
+  const log=document.getElementById('message-log');
+  const el=document.createElement('div');
+  el.className='log-entry'+(tp?' '+tp:''); el.textContent=t;
+  log.appendChild(el); log.scrollTop=log.scrollHeight;
+  while(log.children.length>12)log.removeChild(log.firstChild);
+}
+function openModal(t,c){document.getElementById('modal-title').textContent=t;document.getElementById('modal-content').innerHTML=c;document.getElementById('modal-overlay').classList.remove('hidden');}
+function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');}
+function showHelp(){document.getElementById('help-screen').classList.remove('hidden');}
+function hideHelp(){document.getElementById('help-screen').classList.add('hidden');}
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════
+// MAPA DE ZONAS
+// ═══════════════════════════════════════════════════════
+const ZONE_DETAILS={
+  manglar:{
+    name:'MANGLAR',
+    desc:'Bosque de manglar donde las raíces crean refugios naturales. Aguas poco profundas y cálidas. Ideal para pesca artesanal y trampas. Ecosistema frágil — pesca con responsabilidad.',
+    color:'#2a7a40',waterColor:'#40c8a0',
+    riskLevel:'BAJO',fuelCost:5,
+    species:['Robalo','Mojarra','Cangrejo','Camarón','Trucha','Bagre'],
+  },
+  arrecife:{
+    name:'ARRECIFE',
+    desc:'El arrecife de coral es el ecosistema marino más biodiverso. Colores brillantes y especies únicas. Requiere equipo especializado. Muy sensible a la sobrepesca.',
+    color:'#2a4a8a',waterColor:'#30b8d8',
+    riskLevel:'MEDIO',fuelCost:12,
+    species:['Pez Angel','Pez Loro','Mero','Langosta','Pulpo','Pez Globo','Mantarraya'],
+  },
+  abierto:{
+    name:'MAR ABIERTO',
+    desc:'Aguas profundas y peligrosas. Peces grandes y valiosos, pero tormentas repentinas son frecuentes. Solo para pescadores experimentados. Alto consumo de combustible.',
+    color:'#1a3a6a',waterColor:'#2090c8',
+    riskLevel:'ALTO',fuelCost:20,
+    species:['Atún','Pargo','Sierra','Dorado','Marlín','Calamar G','Ballena J'],
+  },
+};
+
+let _currentZoneMap=null;
+
+function openZoneMap(zone){
+  _currentZoneMap=zone;
+  const zd=ZONE_DETAILS[zone];
+  const overlay=document.getElementById('zone-map-overlay');
+  document.getElementById('zm-title').textContent=zd.name;
+  document.getElementById('zm-desc').textContent=zd.desc;
+  const specEl=document.getElementById('zm-species');
+  specEl.innerHTML=zd.species.map(s=>`<span class="zone-species-chip">${s}</span>`).join('');
+  document.getElementById('zm-cost').textContent='Combustible: '+zd.fuelCost+'% | Riesgo: '+zd.riskLevel;
+  const tBtn=document.getElementById('zm-travel-btn');
+  if(zone===G.zone){
+    tBtn.textContent='ZONA ACTUAL';
+    tBtn.style.borderColor='var(--gold)';tBtn.style.color='var(--gold)';
+    tBtn.onclick=closeZoneMap;
+  } else {
+    tBtn.textContent='NAVEGAR ('+zd.fuelCost+'% comb)';
+    tBtn.style.borderColor='var(--green)';tBtn.style.color='var(--green)';
+    tBtn.onclick=()=>{closeZoneMap();changeZone(zone);};
+  }
+  drawZoneMapCanvas(zone,zd);
+  overlay.classList.add('show');
+}
+
+function closeZoneMap(){
+  document.getElementById('zone-map-overlay').classList.remove('show');
+}
+
+function drawZoneMapCanvas(zone,zd){
+  const cv=document.getElementById('zone-map-canvas');
+  const cx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  cx.clearRect(0,0,W,H);
+
+  // Background water
+  const wg=cx.createLinearGradient(0,0,W,H);
+  wg.addColorStop(0,zd.waterColor); wg.addColorStop(1,shade(zd.waterColor,-30));
+  cx.fillStyle=wg; cx.fillRect(0,0,W,H);
+
+  // Wave lines
+  cx.strokeStyle='rgba(255,255,255,.2)'; cx.lineWidth=2;
+  for(let i=0;i<8;i++){
+    cx.beginPath(); cx.moveTo(i*80-20,40+i*20); cx.quadraticCurveTo(i*80+40,30+i*20,i*80+80,40+i*20); cx.stroke();
+  }
+
+  if(zone==='manglar'){
+    // Mangrove roots
+    cx.fillStyle='#2a5a30'; cx.fillRect(0,H*.4,W*.35,H*.6);
+    for(let i=0;i<8;i++){
+      const rx=20+i*40;
+      cx.strokeStyle='#3a6a20'; cx.lineWidth=5;
+      cx.beginPath(); cx.moveTo(rx,H); cx.lineTo(rx-15,H*.55); cx.stroke();
+      cx.beginPath(); cx.moveTo(rx,H); cx.lineTo(rx+15,H*.5); cx.stroke();
+      cx.fillStyle='#4a8a30'; cx.beginPath(); cx.arc(rx,H*.45,18,0,Math.PI*2); cx.fill();
+    }
+    // Shallow water tint
+    cx.fillStyle='rgba(60,180,120,.3)'; cx.fillRect(W*.25,0,W*.15,H);
+  } else if(zone==='arrecife'){
+    // Sandy bottom
+    cx.fillStyle='#d4bc78'; cx.fillRect(0,H*.55,W,H*.45);
+    // Coral structures
+    const coralC=['#e05050','#e09030','#50c090','#9040e0','#e04080','#40a0e0'];
+    for(let i=0;i<10;i++){
+      const cx2=40+i*55, cc=coralC[i%coralC.length];
+      // Trunk
+      cx.fillStyle=cc; cx.fillRect(cx2-4,H*.35,8,H*.25);
+      // Branches
+      cx.strokeStyle=cc; cx.lineWidth=4;
+      cx.beginPath();cx.moveTo(cx2,H*.4);cx.lineTo(cx2-12,H*.28);cx.stroke();
+      cx.beginPath();cx.moveTo(cx2,H*.38);cx.lineTo(cx2+10,H*.26);cx.stroke();
+      // Tips
+      cx.fillStyle=shade(cc,25);
+      for(const[bx,by] of [[cx2-12,H*.28],[cx2+10,H*.26],[cx2,H*.33]]){
+        cx.beginPath();cx.arc(bx,by,5,0,Math.PI*2);cx.fill();
+      }
+    }
+    // Small fish silhouettes
+    for(let i=0;i<6;i++){
+      const fx=60+i*90, fy=H*.3+Math.sin(i)*20;
+      cx.fillStyle='rgba(255,255,255,.6)';
+      cx.beginPath();cx.ellipse(fx,fy,8,4,0,0,Math.PI*2);cx.fill();
+    }
+  } else {
+    // Open sea — deep blue gradient + horizon
+    const dg=cx.createLinearGradient(0,0,0,H);
+    dg.addColorStop(0,'#4ab0e8');dg.addColorStop(.4,'#2888c8');dg.addColorStop(1,'#103870');
+    cx.fillStyle=dg;cx.fillRect(0,0,W,H);
+    // Horizon glow
+    cx.fillStyle='rgba(255,230,180,.12)';cx.fillRect(0,H*.08,W,H*.06);
+    // Distant boat silhouette
+    cx.fillStyle='rgba(20,40,80,.7)';
+    cx.beginPath();cx.moveTo(W*.6,H*.25);cx.lineTo(W*.75,H*.25);cx.lineTo(W*.72,H*.32);cx.lineTo(W*.63,H*.32);cx.closePath();cx.fill();
+    cx.fillRect(W*.67,H*.1,3,H*.15);
+    // Large wave
+    cx.strokeStyle='rgba(255,255,255,.35)';cx.lineWidth=3;
+    cx.beginPath();cx.moveTo(0,H*.6);
+    for(let x=0;x<=W;x+=40) cx.lineTo(x,H*.6+Math.sin(x*.05)*15);
+    cx.stroke();
+  }
+
+  // Zone label overlay
+  cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(0,0,W,40);
+  cx.fillStyle='#fff';cx.font=`bold 16px 'Press Start 2P',monospace`;cx.textAlign='left';
+  cx.fillText(zd.name,12,26);
+  cx.fillStyle=zone==='abierto'?'#e07050':zone==='arrecife'?'#f0c030':'#70c070';
+  cx.font=`bold 11px 'Press Start 2P',monospace`;cx.textAlign='right';
+  cx.fillText('RIESGO: '+zd.riskLevel,W-12,26);
+}
+
+// ═══════════════════════════════════════════════════════
+// REPUTACION Y NIVEL
+// ═══════════════════════════════════════════════════════
+const LEVELS=[
+  {name:'Novato',     minXP:0,    bonus:1.00},
+  {name:'Aprendiz',  minXP:100,  bonus:1.05},
+  {name:'Pescador',  minXP:300,  bonus:1.10},
+  {name:'Experto',   minXP:700,  bonus:1.18},
+  {name:'Maestro',   minXP:1500, bonus:1.28},
+  {name:'Leyenda',   minXP:3000, bonus:1.40},
+];
+function getCurrentLevel(){
+  const xp=G.xp||0;
+  let lv=LEVELS[0];
+  for(const l of LEVELS) if(xp>=l.minXP) lv=l; else break;
+  return lv;
+}
+function getNextLevel(){
+  const xp=G.xp||0;
+  for(let i=1;i<LEVELS.length;i++) if(xp<LEVELS[i].minXP) return LEVELS[i];
+  return null;
+}
+function addXP(amount){
+  const prevLv=getCurrentLevel();
+  G.xp=(G.xp||0)+amount;
+  const newLv=getCurrentLevel();
+  if(newLv.name!==prevLv.name){
+    logMsg('NIVEL SUBIDO: '+newLv.name+' | Bonus pescas x'+newLv.bonus,'success'); SFX.levelup();
+    showLevelUpPopup(newLv);
+  }
+  updateRepHUD();
+}
+function showLevelUpPopup(lv){
+  openModal('NIVEL SUBIDO!',`
+    <div style="text-align:center;padding:20px;">
+      <div style="font-family:var(--font-pixel);font-size:clamp(12px,2vw,18px);color:var(--gold);margin-bottom:12px">
+        ★ ${lv.name} ★
+      </div>
+      <div style="font-family:var(--font-vt);font-size:clamp(14px,2.2vw,18px);color:var(--sand);line-height:1.6">
+        Has alcanzado el nivel <b style="color:var(--wave)">${lv.name}</b>.<br>
+        Bonus de capturas: <b style="color:var(--gold)">x${lv.bonus}</b><br><br>
+        Sigue pescando con cuidado y respetando el océano.
+      </div>
+    </div>`);
+}
+function updateRepHUD(){
+  const lv=getCurrentLevel();
+  const next=getNextLevel();
+  const xp=G.xp||0;
+  const el=document.getElementById('hud-level');
+  if(el) el.textContent=lv.name+(next?' ('+(xp-lv.minXP)+'/'+(next.minXP-lv.minXP)+' XP)':'(MAX)');
+}
+
+// ═══════════════════════════════════════════════════════
+// MINIJUEGO DE PESCA
+// ═══════════════════════════════════════════════════════
+let _fishingMG={active:false,cursor:0,dir:1,speed:1.2,zone:{start:0,end:0},clicked:false,raf:null,bonus:1};
+
+function startFishingMiniGame(onComplete){
+  const mg=_fishingMG;
+  mg.active=true; mg.clicked=false; mg.cursor=0; mg.dir=1;
+  mg.speed=1.5+Math.random()*1.5;
+  // Random zone (15-35% wide, random position)
+  const zw=0.15+Math.random()*0.2;
+  mg.zone.start=Math.random()*(1-zw);
+  mg.zone.end=mg.zone.start+zw;
+  mg.onComplete=onComplete;
+
+  const el=document.getElementById('fishing-minigame');
+  const zoneEl=document.getElementById('fish-zone');
+  const cursorEl=document.getElementById('fish-cursor');
+  const hintEl=document.getElementById('fish-hint');
+  zoneEl.style.left=(mg.zone.start*100)+'%';
+  zoneEl.style.width=((mg.zone.end-mg.zone.start)*100)+'%';
+  hintEl.textContent='Espera el momento justo...';
+  el.classList.add('active');
+
+  function animMG(){
+    if(!mg.active)return;
+    mg.cursor+=mg.dir*mg.speed*0.016;
+    if(mg.cursor>=1){mg.cursor=1;mg.dir=-1;}
+    if(mg.cursor<=0){mg.cursor=0;mg.dir=1;}
+    cursorEl.style.left=(mg.cursor*100)+'%';
+    mg.raf=requestAnimationFrame(animMG);
+  }
+  mg.raf=requestAnimationFrame(animMG);
+
+  // Auto-resolve after 4 seconds (miss)
+  mg._autoTimer=setTimeout(()=>{
+    if(mg.active&&!mg.clicked) fishingClick(true);
+  },4000);
+}
+
+function fishingClick(auto=false){
+  const mg=_fishingMG;
+  if(!mg.active)return;
+  mg.active=false; mg.clicked=true;
+  cancelAnimationFrame(mg.raf); clearTimeout(mg._autoTimer);
+  const el=document.getElementById('fishing-minigame');
+  const hintEl=document.getElementById('fish-hint');
+  const inZone=mg.cursor>=mg.zone.start&&mg.cursor<=mg.zone.end;
+  // Calculate quality based on position within zone
+  if(auto){
+    mg.bonus=0.6;
+    hintEl.textContent='Demasiado tarde... pez débil';
+  } else if(inZone){
+    const center=(mg.zone.start+mg.zone.end)/2;
+    const dist=Math.abs(mg.cursor-center)/((mg.zone.end-mg.zone.start)/2);
+    mg.bonus=dist<0.3?1.5:dist<0.6?1.25:1.0;
+    hintEl.textContent=mg.bonus>=1.5?'PERFECTO! +50% valor':'BIEN! +25% valor';
+  } else {
+    mg.bonus=0.7;
+    hintEl.textContent='Muy pronto... pez pequeño';
+  }
+  setTimeout(()=>el.classList.remove('active'),800);
+  if(mg.onComplete) mg.onComplete(mg.bonus);
+}
+
+// ═══════════════════════════════════════════════════════
+// SISTEMA DE MISIONES
+// ═══════════════════════════════════════════════════════
+const MISSIONS_POOL = [
+  {
+    id:'m1', giver:'Don Marcos', icon:'👨‍🌾',
+    title:'Robalo para la Fiesta',
+    desc:'Don Marcos necesita 3 Robalo frescos para la cena del pueblo.',
+    req:{name:'Robalo', qty:3}, reward:{money:450, eco:5},
+    rewardText:'+$450 y +5 ECO',
+  },
+  {
+    id:'m2', giver:'Dra. Luna', icon:'👩‍🔬',
+    title:'Muestra de Pulpo',
+    desc:'La investigadora necesita 1 Pulpo para su estudio de tintas.',
+    req:{name:'Pulpo', qty:1}, reward:{money:600, eco:8},
+    rewardText:'+$600 y +8 ECO',
+  },
+  {
+    id:'m3', giver:'Cantinero', icon:'🧑‍🍳',
+    title:'Sierra para el Menú',
+    desc:'El chef necesita 2 Sierras frescas para el especial de hoy.',
+    req:{name:'Sierra', qty:2}, reward:{money:700, eco:3},
+    rewardText:'+$700 y +3 ECO',
+  },
+  {
+    id:'m4', giver:'Abuela Rosa', icon:'🧓',
+    title:'Camarón del Manglar',
+    desc:'Abuela Rosa quiere preparar su caldo especial. Necesita 4 Camarones.',
+    req:{name:'Camaron', qty:4}, reward:{money:300, eco:4},
+    rewardText:'+$300 y +4 ECO',
+  },
+  {
+    id:'m5', giver:'Cooperativa', icon:'🏢',
+    title:'Atún para Exportar',
+    desc:'La cooperativa tiene un pedido urgente de 2 Atunes para el mercado.',
+    req:{name:'Atun', qty:2}, reward:{money:1800, eco:5},
+    rewardText:'+$1800 y +5 ECO',
+  },
+  {
+    id:'m6', giver:'Dra. Luna', icon:'👩‍🔬',
+    title:'Pez Ángel para Catalogar',
+    desc:'Se necesita fotografiar 1 Pez Ángel vivo. Lo liberarás tras la foto.',
+    req:{name:'Pez Angel', qty:1}, reward:{money:800, eco:12},
+    rewardText:'+$800 y +12 ECO',
+  },
+  {
+    id:'m7', giver:'Don Marcos', icon:'👨‍🌾',
+    title:'Mero para la Cooperativa',
+    desc:'Don Marcos pidió 2 Meros para enviar al mercado regional.',
+    req:{name:'Mero', qty:2}, reward:{money:900, eco:3},
+    rewardText:'+$900 y +3 ECO',
+  },
+  {
+    id:'m8', giver:'Niño del Puerto', icon:'👦',
+    title:'Primera Langosta',
+    desc:'El niño nunca ha visto una langosta. ¡Tráele 1!',
+    req:{name:'Langosta', qty:1}, reward:{money:200, eco:6},
+    rewardText:'+$200 y +6 ECO',
+  },
+];
+
+// G.missions: array of active mission ids, G.completedMissions: set
+function initMissions(){
+  if(!G.activeMissions) G.activeMissions=[];
+  if(!G.completedMissions) G.completedMissions=[];
+  refreshMissions();
+}
+
+function refreshMissions(){
+  // Keep max 3 active missions, pick from pool excluding completed
+  const available=MISSIONS_POOL.filter(m=>!G.completedMissions.includes(m.id)&&!G.activeMissions.find(a=>a.id===m.id));
+  while(G.activeMissions.length<3&&available.length){
+    const pick=available.splice(Math.floor(Math.random()*available.length),1)[0];
+    G.activeMissions.push({...pick, progress:0});
+  }
+}
+
+function checkMissionProgress(spName){
+  // Called after catching a fish — check if it helps any mission
+  G.activeMissions.forEach(m=>{
+    if(m.req.name===spName){
+      const have=G.inventory.filter(i=>i.name===spName).reduce((s,i)=>s+i.qty,0);
+      if(have>=m.req.qty) logMsg('Mision lista: "'+m.title+'" — entrega en la cantina!','warn');
+    }
+  });
+}
+
+function openMissions(){
+  refreshMissions();
+  if(!G.activeMissions.length){
+    openModal('MISIONES','<div style="font-family:var(--font-vt);font-size:16px;color:#5a7a5a;padding:10px">No hay misiones disponibles ahora. Vuelve mañana.</div>');
+    return;
+  }
+  const html=G.activeMissions.map(m=>{
+    const have=G.inventory.filter(i=>i.name===m.req.name).reduce((s,i)=>s+i.qty,0);
+    const canDeliver=have>=m.req.qty;
+    const prog=Math.min(have,m.req.qty);
+    return `<div style="background:#0d1a0a;border:2px solid ${canDeliver?'var(--gold)':'#2a4020'};padding:12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:22px">${m.icon}</span>
+        <div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(6px,1vw,8px);color:var(--wave)">${m.title}</div>
+          <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,13px);color:#706848">${m.giver}</div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:var(--sand);margin-bottom:8px">${m.desc}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,13px);color:#a0a878">
+          Progreso: <b style="color:${canDeliver?'var(--gold)':'#c0c890'}">${prog}/${m.req.qty}</b> ${m.req.name}
+          &nbsp;|&nbsp; Recompensa: <b style="color:var(--green)">${m.rewardText}</b>
+        </div>
+        <button style="font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);padding:6px 12px;border:2px solid ${canDeliver?'var(--gold)':'#404820'};color:${canDeliver?'var(--gold)':'#404820'};background:transparent;cursor:${canDeliver?'pointer':'default'}"
+          ${canDeliver?`onclick="deliverMission('${m.id}')"`:''}>
+          ${canDeliver?'ENTREGAR':'PENDIENTE'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  const completed=G.completedMissions.length;
+  openModal('MISIONES DEL PUEBLO',`
+    <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,13px);color:#808060;margin-bottom:10px">
+      Completadas: <b style="color:var(--gold)">${completed}</b> &nbsp;|&nbsp; Activas: <b style="color:var(--wave)">${G.activeMissions.length}</b>
+    </div>
+    ${html}`);
+}
+
+function deliverMission(id){
+  const idx=G.activeMissions.findIndex(m=>m.id===id);
+  if(idx===-1)return;
+  const m=G.activeMissions[idx];
+  // Remove fish from inventory
+  let needed=m.req.qty;
+  for(let i=G.inventory.length-1;i>=0&&needed>0;i--){
+    if(G.inventory[i].name===m.req.name){
+      const take=Math.min(needed,G.inventory[i].qty);
+      G.inventory[i].qty-=take;
+      needed-=take;
+      if(G.inventory[i].qty<=0)G.inventory.splice(i,1);
+    }
+  }
+  // Give reward
+  G.money+=m.reward.money||0;
+  G.eco=Math.min(100,G.eco+(m.reward.eco||0));
+  G.completedMissions.push(id);
+  G.activeMissions.splice(idx,1);
+  addXP(50);
+  refreshMissions();
+  logMsg('Mision completada: '+m.title+' | '+m.rewardText,'success');
+  updateHUD();
+  openMissions();
+}
+
+// ── CANTINA INTERIOR ────────────────────────────────────────
+let cantinaAnimFrame=null;
+let cantinaWt=0;
+
+function drawCantinaInterior(){
+  const cv=document.getElementById('cantina-interior-canvas');
+  if(!cv)return;
+  const cx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  cantinaWt+=0.016;
+  cx.clearRect(0,0,W,H);
+
+  // Floor
+  const fg=cx.createLinearGradient(0,H*.45,0,H);
+  fg.addColorStop(0,'#3a2810'); fg.addColorStop(1,'#1a1005');
+  cx.fillStyle=fg; cx.fillRect(0,H*.45,W,H);
+  // Floor planks
+  for(let i=0;i<8;i++){cx.fillStyle=i%2?'#2a1c0a':'#321f0c';cx.fillRect(i*W/8,H*.45,W/8-1,H*.55);}
+  cx.strokeStyle='#1a1005';cx.lineWidth=2;
+  for(let i=0;i<8;i++){cx.beginPath();cx.moveTo(i*W/8,H*.45);cx.lineTo(i*W/8,H);cx.stroke();}
+
+  // Walls
+  const wg=cx.createLinearGradient(0,0,0,H*.5);
+  wg.addColorStop(0,'#4a3018'); wg.addColorStop(1,'#6a4828');
+  cx.fillStyle=wg; cx.fillRect(0,0,W,H*.5);
+  // Wall planks
+  for(let i=0;i<6;i++){cx.fillStyle=`rgba(0,0,0,${0.05+i*.02})`;cx.fillRect(0,i*H*.08,W,H*.04);}
+
+  // Shelf with bottles (left)
+  cx.fillStyle='#5a3818';cx.fillRect(20,H*.1,120,8);
+  const bottleColors=['#c03020','#4080a0','#20a040','#c09020','#8040c0'];
+  for(let i=0;i<5;i++){
+    const bx=28+i*22, bc=bottleColors[i];
+    // Bottle body
+    cx.fillStyle=bc;cx.fillRect(bx,H*.04,12,H*.07);
+    cx.fillStyle=shade(bc,20);cx.fillRect(bx+1,H*.04,4,H*.07);
+    // Neck
+    cx.fillStyle=bc;cx.fillRect(bx+4,H*.025,5,H*.02);
+    // Label
+    cx.fillStyle='rgba(255,255,240,.7)';cx.fillRect(bx+2,H*.055,8,H*.03);
+  }
+
+  // Bar counter (center)
+  cx.fillStyle='#6b4020';cx.fillRect(W*.3,H*.4,W*.4,H*.12);
+  cx.fillStyle='#8b5828';cx.fillRect(W*.3,H*.38,W*.4,H*.06);
+  cx.fillStyle='#a07038';cx.fillRect(W*.3,H*.38,W*.4,3);
+  // Counter highlight
+  cx.fillStyle='rgba(255,220,150,.12)';cx.fillRect(W*.31,H*.39,W*.38,2);
+  // Mugs on counter
+  for(let i=0;i<3;i++){
+    const mx=W*.36+i*W*.08;
+    cx.fillStyle='#c8c0b0';cx.fillRect(mx,H*.32,14,12);
+    cx.strokeStyle='#a0a090';cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(mx+14,H*.335);cx.quadraticCurveTo(mx+19,H*.34,mx+14,H*.365);cx.stroke();
+    // Beer foam
+    cx.fillStyle='rgba(255,248,220,.9)';cx.beginPath();cx.ellipse(mx+7,H*.32,7,3,0,0,Math.PI*2);cx.fill();
+  }
+
+  // Hanging lanterns (animated glow)
+  for(let i=0;i<3;i++){
+    const lx=W*.2+i*W*.3, ly=H*.12;
+    const flicker=0.7+Math.sin(cantinaWt*3+i*1.2)*0.3;
+    // Rope
+    cx.strokeStyle='#806040';cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(lx,0);cx.lineTo(lx,ly);cx.stroke();
+    // Glow
+    cx.save();cx.globalAlpha=0.18*flicker;cx.fillStyle='#ffe080';
+    cx.beginPath();cx.arc(lx,ly+10,28,0,Math.PI*2);cx.fill();cx.restore();
+    // Lantern body
+    cx.fillStyle='#c08020';cx.fillRect(lx-8,ly,16,20);
+    cx.fillStyle=`rgba(255,220,80,${0.85*flicker})`;cx.fillRect(lx-5,ly+2,10,14);
+    cx.fillStyle='#a06010';cx.fillRect(lx-9,ly-3,18,5);cx.fillRect(lx-9,ly+19,18,4);
+  }
+
+  // Bartender (simple pixel art behind counter)
+  const bpx=W*.52, bpy=H*.3;
+  cx.save();cx.translate(bpx,bpy);
+  // Body
+  cx.fillStyle='#e8c890';cx.fillRect(-4,-20,9,8); // head
+  cx.fillStyle='#c85020';cx.fillRect(-6,-12,13,16); // shirt
+  cx.fillStyle='#f0e0c0';cx.fillRect(-5,-12,3,5);cx.fillRect(5,-12,3,5); // apron front
+  cx.fillStyle='#2a1a08';cx.fillRect(-4,-24,9,6); // hat
+  cx.fillStyle='#3a2a10';cx.fillRect(-6,-20,2,2);cx.fillRect(5,-20,2,2); // hat brim
+  // Eyes
+  cx.fillStyle='#201008';cx.fillRect(-2,-17,2,2);cx.fillRect(2,-17,2,2);
+  cx.restore();
+
+  // Tables (right side)
+  for(let t=0;t<2;t++){
+    const tx=W*.72+t*W*.12, ty=H*.5;
+    cx.fillStyle='#6b4020';cx.beginPath();cx.ellipse(tx,ty,22,8,0,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#8b5828';cx.beginPath();cx.ellipse(tx,ty,22,4,0,0,Math.PI,true);cx.fill();
+    cx.strokeStyle='#5a3010';cx.lineWidth=1;cx.beginPath();cx.ellipse(tx,ty,22,8,0,0,Math.PI*2);cx.stroke();
+    // Table leg
+    cx.fillStyle='#5a3010';cx.fillRect(tx-3,ty+6,6,H*.18);
+    // Cup on table
+    cx.fillStyle='#c0b8a8';cx.fillRect(tx-5,ty-10,8,8);
+    cx.fillStyle='rgba(80,160,80,.8)';cx.beginPath();cx.ellipse(tx-1,ty-10,4,2,0,0,Math.PI*2);cx.fill();
+  }
+
+  // Seated characters (simple silhouettes)
+  for(let s=0;s<2;s++){
+    const sx=W*.7+s*W*.12, sy=H*.42;
+    cx.fillStyle='#2a2018';cx.fillRect(sx-8,sy-18,16,20); // body
+    cx.fillStyle='#c89868';cx.fillRect(sx-5,sy-28,10,12); // head
+    cx.fillStyle='#403018';cx.fillRect(sx-6,sy-32,12,6); // hat
+  }
+
+  // Chalkboard (right wall)
+  cx.fillStyle='#203818';cx.fillRect(W*.82,H*.05,W*.14,H*.28);
+  cx.strokeStyle='#304828';cx.lineWidth=3;
+  cx.strokeRect(W*.82,H*.05,W*.14,H*.28);
+  cx.fillStyle='rgba(255,255,255,.55)';
+  cx.font='7px monospace';cx.textAlign='left';
+  const menuItems=['HOY:','> Caldo','> Tacos','> Cerveza','> Agua'];
+  menuItems.forEach((t,i)=>cx.fillText(t,W*.835,H*.1+i*H*.04));
+
+  if(document.getElementById('cantina-screen').classList.contains('open')){
+    cantinaAnimFrame=requestAnimationFrame(drawCantinaInterior);
+  }
+}
+
+const CANTINA_RUMORS=[
+  'El Mero grande vuelve al arrecife cuando el agua esta a 26 grados.',
+  'Dicen que el marlin aparece solo en mar abierto durante tormenta.',
+  'Los cangrejos salen al amanecer. Madrugar vale la pena.',
+  'La cooperativa paga mejor los lunes. Ve temprano.',
+  'El calamar gigante solo aparece de noche en el mar abierto.',
+  'Si cuidas el ECO, los peces raros aparecen mas seguido.',
+  'El Pez Angel del arrecife prefiere el anzuelo fino.',
+  'Un pescador vio una ballena hace tres dias rumbo al norte.',
+];
+
+const CANTINA_DEALS=[
+  {name:'Red de Arrastre Usada', desc:'Segunda mano pero funciona. Bono pesca en Manglar.', price:200, type:'buy', action:'trampa_bonus'},
+  {name:'Informacion de Cardumen', desc:'Ubicacion exacta de un cardumen de Atun hoy.', price:350, type:'buy', action:'tuna_tip'},
+  {name:'Licencia de Pesca Mensual', desc:'Reduce impacto ECO de todos tus metodos por 3 dias.', price:500, type:'buy', action:'eco_license'},
+  {name:'Vender Captura al Chef', desc:'El chef paga 30% extra por cualquier especie de arrecife.', price:0, type:'sell_bonus', action:'chef_deal'},
+  {name:'Contrato Cooperativa', desc:'Vende tu proxima captura de Atun a precio fijo $1800.', price:0, type:'contract', action:'tuna_contract'},
+];
+
+
+function closeCantina(){
+  document.getElementById('cantina-screen').classList.remove('open');
+  if(cantinaAnimFrame){cancelAnimationFrame(cantinaAnimFrame);cantinaAnimFrame=null;}
+}
+
+function cantinaTab(btn, panel){
+  document.querySelectorAll('.cantina-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.cantina-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('cantina-'+panel).classList.add('active');
+  renderCantinaPanel(panel);
+}
+
+function renderCantinaPanel(panel){
+  if(panel==='tratos'){
+    const el=document.getElementById('cantina-tratos');
+    el.innerHTML=`<div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:#807848;margin-bottom:10px;">Dinero disponible: <b style="color:var(--gold)">$${G.money}</b></div>`+
+      CANTINA_DEALS.map(d=>`
+        <div class="deal-card">
+          <div style="flex:1">
+            <div class="deal-name">${d.name}</div>
+            <div class="deal-desc">${d.desc}</div>
+          </div>
+          ${d.price>0?`<div class="deal-price">$${d.price}</div>`:'<div class="deal-price">TRATO</div>'}
+          <button class="deal-btn ${d.type==='buy'||d.type==='eco_license'?'buy':'sell'}"
+            onclick="cantinaAction('${d.action}',${d.price})">
+            ${d.type==='buy'||d.type==='eco_license'?'COMPRAR':'ACORDAR'}
+          </button>
+        </div>`).join('');
+  }
+  else if(panel==='venta'){
+    const el=document.getElementById('cantina-venta');
+    const items=G.inventory;
+    if(!items.length){el.innerHTML='<div style="font-family:var(--font-vt);font-size:15px;color:#5a7a5a;padding:14px;">No tienes nada para vender.</div>';return;}
+    el.innerHTML=`<div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);color:#807848;margin-bottom:8px;">El cantinero compra fresco. +15% sobre precio normal.</div>`+
+      items.map(it=>{
+        const bonus=Math.round((it.unitValue||Math.round(it.totalValue/it.qty))*1.15);
+        return `<div class="deal-card">
+          <div class="deal-name">${it.name} x${it.qty}</div>
+          <div class="deal-price">$${bonus} c/u (+15%)</div>
+          <div style="display:flex;gap:6px">
+            <button class="deal-btn sell" onclick="cantinaSell('${it.name}',${bonus})">1</button>
+            <button class="deal-btn sell" onclick="cantinasSellAll('${it.name}',${bonus})">TODO</button>
+          </div>
+        </div>`;
+      }).join('');
+  }
+  else if(panel==='rumores'){
+    const el=document.getElementById('cantina-rumores');
+    // Show 4 random rumors
+    const shown=CANTINA_RUMORS.sort(()=>Math.random()-.5).slice(0,4);
+    el.innerHTML='<div style="font-family:var(--font-pixel);font-size:clamp(5px,.9vw,7px);color:#806040;margin-bottom:10px;">RUMORES DEL PUEBLO</div>'+
+      shown.map(r=>`<div class="rumor-entry">"${r}"</div>`).join('');
+  }
+  else if(panel==='misiones'){
+    const el=document.getElementById('cantina-misiones');
+    refreshMissions();
+    if(!G.activeMissions||!G.activeMissions.length){
+      el.innerHTML='<div style="font-family:var(--font-vt);font-size:15px;color:#5a7a5a;padding:14px;">No hay misiones disponibles. Vuelve manana.</div>';
+    } else {
+      el.innerHTML=G.activeMissions.map(m=>{
+        const have=G.inventory.filter(i=>i.name===m.req.name).reduce((s,i)=>s+i.qty,0);
+        const can=have>=m.req.qty;
+        return `<div class="deal-card" style="border-color:${can?'var(--gold)':'#2a4020'}">
+          <div style="font-size:20px">${m.icon}</div>
+          <div style="flex:1"><div class="deal-name">${m.title}</div><div class="deal-desc">${m.desc}</div>
+          <div style="font-family:var(--font-pixel);font-size:clamp(4px,.7vw,6px);color:#606848;margin-top:3px">${have}/${m.req.qty} ${m.req.name}</div></div>
+          <div class="deal-price">$${m.reward}</div>
+          ${can?`<button class="deal-btn buy" onclick="deliverMission('${m.id}');renderCantinaPanel('misiones')">ENTREGAR</button>`:'<span style="font-family:var(--font-pixel);font-size:clamp(4px,.7vw,6px);color:#405040">PENDIENTE</span>'}
+        </div>`;
+      }).join('');
+    }
+  }
+  else if(panel==='menu'){
+    const el=document.getElementById('cantina-menu');
+    el.innerHTML=`
+      <div style="font-family:var(--font-pixel);font-size:clamp(5px,.9vw,7px);color:#c8a040;margin-bottom:12px;">MENU DEL DIA</div>
+      ${[['Caldo de Pescado','Restaura 80 energia + 50 hambre','$120','comida'],
+         ['Tacos de Camaron','Restaura 60 hambre + 30 sed','$90','taco'],
+         ['Cerveza Artesanal','Restaura 50 sed, -10 energia','$60','cerveza'],
+         ['Agua Fresca','Restaura 80 sed','$35','agua'],
+         ['Descanso en Hamaca','Restaura 60 energia, avanza 3h','$80','hamaca']
+        ].map(([n,d,p,k])=>`
+        <div class="deal-card">
+          <div style="flex:1"><div class="deal-name">${n}</div><div class="deal-desc">${d}</div></div>
+          <div class="deal-price">${p}</div>
+          <button class="deal-btn buy" onclick="cantinaFood('${k}',${parseInt(p.slice(1))})">PEDIR</button>
+        </div>`).join('')}`;
+  }
+}
+
+function cantinaAction(action,price){
+  if(price>0&&G.money<price){logMsg('Sin dinero suficiente.','danger');return;}
+  if(price>0) G.money-=price;
+  if(action==='trampa_bonus'){logMsg('Red de arrastre: +30% captura en Manglar por hoy.','success');G.trampaBonus=true;}
+  else if(action==='tuna_tip'){logMsg('Cardumen de Atun al noroeste. Ve a Mar Abierto!','success');setTimeout(()=>logMsg('Tip: el Atun esta activo ahora.','warn'),2000);}
+  else if(action==='eco_license'){logMsg('Licencia activa. Menor impacto ECO por 3 dias.','success');G.ecoLicense=3;}
+  else if(action==='chef_deal'){logMsg('El chef pagara +30% por arrecife. Vuelve con captura!','success');G.chefDeal=true;}
+  else if(action==='tuna_contract'){logMsg('Contrato firmado: proximo Atun a $1800.','success');G.tunaContract=true;}
+  updateHUD(); renderCantinaPanel('tratos');
+}
+
+function cantinaSell(name,price){
+  const idx=G.inventory.findIndex(i=>i.name===name);
+  if(idx===-1)return;
+  const it=G.inventory[idx];
+  G.money+=price; it.qty--; it.totalValue-=it.unitValue||price;
+  if(it.qty<=0)G.inventory.splice(idx,1);
+  logMsg(`Vendiste 1 ${name} al chef por $${price}.`,'success');
+  updateHUD(); renderCantinaPanel('venta');
+}
+
+function cantinasSellAll(name,price){
+  const idx=G.inventory.findIndex(i=>i.name===name);
+  if(idx===-1)return;
+  const it=G.inventory[idx];
+  const total=price*it.qty;
+  G.money+=total; G.inventory.splice(idx,1);
+  logMsg(`Vendiste todo el ${name} por $${total}.`,'success');
+  updateHUD(); renderCantinaPanel('venta');
+}
+
+function cantinaFood(type,cost){
+  if(G.money<cost){logMsg('Sin dinero.','danger');return;}
+  G.money-=cost;
+  if(type==='comida'){G.energy=Math.min(100,G.energy+80);G.hunger=Math.min(100,G.hunger+50);logMsg('+80 Energia, +50 Hambre','success');}
+  else if(type==='taco'){G.hunger=Math.min(100,G.hunger+60);G.thirst=Math.min(100,G.thirst+30);logMsg('+60 Hambre, +30 Sed','success');}
+  else if(type==='cerveza'){G.thirst=Math.min(100,G.thirst+50);G.energy=Math.max(0,G.energy-10);logMsg('+50 Sed, -10 Energia','success');}
+  else if(type==='agua'){G.thirst=Math.min(100,G.thirst+80);logMsg('+80 Sed','success');}
+  else if(type==='hamaca'){G.energy=Math.min(100,G.energy+60);G.hour=Math.min(23,G.hour+3);logMsg('+60 Energia, +3 horas','success');}
+  updateHUD(); renderCantinaPanel('menu');
+}
+
+// ─── SAVE / LOAD ───────────────────────────────────────────
+function getState(){
+  // Serialize only primitive/safe data — no functions, emojis in keys, or circular refs
+  const safeMissions=(G.activeMissions||[]).map(m=>({
+    id: String(m.id||''),
+    progress: Number(m.progress||0),
+  }));
+  const safeCompleted=(G.completedMissions||[]).map(id=>String(id));
+  const safeInventory=G.inventory.map(i=>({
+    name:String(i.name||''),
+    qty:Number(i.qty||0),
+    totalValue:Number(i.totalValue||0),
+    unitValue:Number(i.unitValue||0),
+  }));
+  const safeLogbook={};
+  for(const [k,v] of Object.entries(G.logbook||{})){
+    safeLogbook[k]={count:Number(v.count||0),rare:!!v.rare};
+  }
+  return {
+    day:G.day||1, hour:G.hour||6, minute:G.minute||0, season:G.season||0,
+    weather:G.weather||'sunny', temp:G.temp||24, zone:G.zone||'manglar',
+    method:G.method||'anzuelo', methodIdx:G.methodIdx||0,
+    money:G.money||0, fuel:G.fuel||100, energy:G.energy||100,
+    hunger:G.hunger||100, thirst:G.thirst||100, eco:G.eco||80,
+    caught:G.caught||0, xp:G.xp||0,
+    _dayStartMoney:G._dayStartMoney||G.money||0,
+    _dayStartCaught:G._dayStartCaught||G.caught||0,
+    activeMissions:safeMissions,
+    completedMissions:safeCompleted,
+    inventory:safeInventory,
+    logbook:safeLogbook,
+  };
+}
+function restoreRefs(state){
+  const all=[...SPECIES.manglar,...SPECIES.arrecife,...SPECIES.abierto];
+  // Restore species references in inventory
+  state.inventory=(state.inventory||[]).map(i=>{
+    const sp=all.find(s=>s.name===i.name)||{name:i.name,color:'#7fc5a8',belly:'#c8f0dc',fin:'#5a9a7a'};
+    return{...i,sp};
+  });
+  // Restore species references in logbook
+  state.logbook=Object.fromEntries(Object.entries(state.logbook||{}).map(([k,v])=>{
+    const sp=all.find(s=>s.name===k)||{name:k,color:'#7fc5a8',belly:'#c8f0dc',fin:'#5a9a7a'};
+    return[k,{...v,sp}];
+  }));
+  // Rebuild missions from stored IDs only
+  const savedMissionIds=(state.activeMissions||[]).map(m=>typeof m==='object'?m.id:m);
+  state.activeMissions=MISSIONS_POOL
+    .filter(m=>savedMissionIds.includes(m.id))
+    .map(m=>({...m,progress:((state.activeMissions||[]).find(sm=>sm.id===m.id)||{}).progress||0}));
+  state.completedMissions=(state.completedMissions||[]).map(id=>String(id));
+  return state;
+}
+
+async function openSaveLoad(mode){
+  const keys=['slot1','slot2','slot3'];
+  const saves=await Promise.all(keys.map(k=>storageLoad('marvivo_'+k)));
+  const html=keys.map((k,i)=>{
+    const sd=saves[i];
+    const info=sd
+      ?`<div class="save-slot-info"><b>Ranura ${i+1}</b><br>Dia ${sd.day} | $${sd.money} | ECO:${Math.round(sd.eco)}%<br>${sd.zone} | ${sd.caught} capturas</div>`
+      :`<div class="save-slot-info" style="color:#5a7a8a"><b>Ranura ${i+1}</b><br>-- Vacia --</div>`;
+    const lb=sd&&mode==='load'?`<button class="slot-btn load" onclick="loadSlot('${k}')">CARGAR</button>`:'';
+    const sb=mode==='save'&&G.running?`<button class="slot-btn save-s" onclick="saveSlot('${k}')">GUARDAR</button>`:'';
+    const db=sd?`<button class="slot-btn del" onclick="deleteSlot('${k}','${mode}')">X</button>`:'';
+    return `<div class="save-slot ${sd?'occupied':''}">${info}<div class="slot-btns">${lb}${sb}${db}</div></div>`;
+  }).join('');
+  openModal(mode==='save'?'GUARDAR PARTIDA':'CARGAR PARTIDA',`
+    <div style="font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);">
+      <div style="color:var(--sand);margin-bottom:10px;">3 ranuras de guardado disponibles.</div>
+      ${html}
+    </div>`);
+}
+
+async function saveSlot(slot){
+  const ok=await storageSave('marvivo_'+slot,getState());
+  closeModal();
+  if(ok){
+    const t=document.getElementById('save-toast');
+    t.textContent='PARTIDA GUARDADA EN RANURA '+(slot.slice(-1));
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200);
+    logMsg('Guardado en ranura '+slot.slice(-1)+'.','save'); SFX.save();
+  } else {
+    logMsg('Error al guardar.','danger');
+  }
+}
+
+async function loadSlot(slot){
+  const sd=await storageLoad('marvivo_'+slot);
+  if(!sd){logMsg('No se encontro la partida.','danger');closeModal();return;}
+  closeModal();
+  if(G.tickTimer)clearInterval(G.tickTimer);
+  if(G.fishTimer)clearTimeout(G.fishTimer);
+  if(G.stormTimer)clearTimeout(G.stormTimer);
+  startGame(restoreRefs(sd));
+  logMsg('Partida cargada: Dia '+sd.day,'success');
+}
+
+async function deleteSlot(slot,mode){
+  await storageDelete('marvivo_'+slot);
+  logMsg('Ranura '+slot.slice(-1)+' eliminada.','warn');
+  openSaveLoad(mode);
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+window.addEventListener('resize',()=>{
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  boatX=canvas.width*.28; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
+  initWaves(); initBirds(); villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
+  if(tc){tc.width=window.innerWidth;tc.height=window.innerHeight;tw=tc.width;th=tc.height;}
+  checkOrientation();
+});
+
+initCanvas();
+initTitleCanvas();
+</script>
+</body>
+</html>
