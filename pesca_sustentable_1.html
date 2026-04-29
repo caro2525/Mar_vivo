@@ -941,6 +941,7 @@ const G={
   caught:0,inventory:[],logbook:{},
   fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0,
   targetSpecies:[],equipment:['anzuelo'],
+  populations:{}, // Will be initialized with initPopulations()
 };
 
 // ─── SPECIES ───────────────────────────────────────────────
@@ -1052,6 +1053,56 @@ function initFishEntities(){
     const sp=pool[Math.floor(Math.random()*pool.length)];
     fishEntities.push({x:Math.random()*canvas.width,y:canvas.height*(.40+Math.random()*.24),dir:Math.random()>.5?1:-1,speed:.4+Math.random()*1.3,sp,bob:Math.random()*Math.PI*2});
   }
+}
+
+// ─── POPULATION SYSTEM ──────────────────────────────────────
+function initPopulations(){
+  G.populations={
+    manglar:{},
+    arrecife:{},
+    abierto:{}
+  };
+
+  // Initialize each species with starting population
+  // Rarer species start with lower populations
+  Object.keys(SPECIES).forEach(zone=>{
+    SPECIES[zone].forEach(sp=>{
+      // Calculate initial population based on rarity:
+      // Common (rarity 0.5-0.6): 50-60, Uncommon (0.3-0.4): 35-45, Rare (0.15-0.25): 20-30, Very Rare (0.03-0.1): 10-15
+      let basePop=50;
+      if(sp.rarity<0.2) basePop=15;
+      else if(sp.rarity<0.3) basePop=25;
+      else if(sp.rarity<0.5) basePop=35;
+
+      const variance=Math.floor(Math.random()*10-5); // ±5 variation
+      G.populations[zone][sp.name]=Math.max(5,basePop+variance);
+    });
+  });
+}
+
+function getPopulation(zone,speciesName){
+  return G.populations[zone]?.[speciesName]||0;
+}
+
+function reducePopulation(zone,speciesName,amount=1){
+  if(G.populations[zone] && G.populations[zone][speciesName]){
+    G.populations[zone][speciesName]=Math.max(0,G.populations[zone][speciesName]-amount);
+  }
+}
+
+function replenishPopulations(){
+  // Called daily to replenish populations based on ECO health
+  const replenishRate=G.eco>=70?1:(G.eco>=40?0.5:0.25); // Base 1/day, reduced by low ECO
+
+  Object.keys(G.populations).forEach(zone=>{
+    Object.keys(G.populations[zone]).forEach(sp=>{
+      const current=G.populations[zone][sp];
+      const max=60; // Maximum sustainable population
+      if(current<max){
+        G.populations[zone][sp]=Math.min(max,current+replenishRate);
+      }
+    });
+  });
 }
 
 // ─── PIXEL ART HELPERS ─────────────────────────────────────
@@ -2671,10 +2722,13 @@ function startGame(saved=null){
   if(saved){
     Object.assign(G,saved);
     G.fishing=false; G.fishTimer=null; G.tickTimer=null; G.storm=false; G.stormTimer=null; G.ticks=0; G.xp=saved.xp||0; G.activeMissions=saved.activeMissions||[]; G.completedMissions=saved.completedMissions||[]; G._dayStartMoney=saved._dayStartMoney||G.money; G._dayStartCaught=saved._dayStartCaught||G.caught; G.targetSpecies=saved.targetSpecies||[]; G.equipment=saved.equipment||['anzuelo'];
+    // Restore or initialize populations if missing
+    if(!G.populations || Object.keys(G.populations).length===0) initPopulations();
   } else {
     Object.assign(G,{running:false,day:1,hour:6,minute:0,season:0,weather:'sunny',temp:24,zone:'manglar',
       method:'anzuelo',methodIdx:0,money:500,fuel:100,energy:100,hunger:100,thirst:100,eco:80,
       caught:0,xp:0,targetSpecies:[],equipment:['anzuelo'],activeMissions:[],completedMissions:[],inventory:[],logbook:{},_dayStartMoney:500,_dayStartCaught:0,fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0});
+    initPopulations();
   }
   document.getElementById('title-screen').classList.add('hidden');
   ['hud','bottom-panel','message-log','zone-indicator'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
@@ -2727,6 +2781,7 @@ function gameTick(){
     showDaySummary(G.day); // show before incrementing
     G.day++;
     G.eco=Math.min(100,G.eco+2);
+    replenishPopulations(); // Replenish fish populations based on ECO
     if(G.day%30===1){G.season=(G.season+1)%4;logMsg('Nueva temporada: '+G.seasons[G.season],'success');initFishEntities();}
     logMsg('Dia '+G.day+'. El oceano se recupera.','success');
     G._dayStartMoney=G.money; G._dayStartCaught=G.caught;
@@ -3035,7 +3090,22 @@ function startFishingWithType(preferredFish){
       const val=Math.round(baseVal*bonus);
       const ex=G.inventory.find(i=>i.name===ch.name);
       if(ex){ex.qty++;ex.totalValue+=val;}else G.inventory.push({name:ch.name,sp:ch,qty:1,totalValue:val,unitValue:val});
+
+      // Reduce population
+      reducePopulation(G.zone,ch.name,1);
+      const popAfter=getPopulation(G.zone,ch.name);
+
       G.caught++; recordLB(ch); showCatchPopup(ch,w,val); spawnParticles(ch); SFX.catch(); checkMissionProgress(ch.name); addXP(Math.round(5+ch.eco*3+(bonus>=1.4?15:bonus>=1.2?8:0)));
+
+      // Population warning messages
+      if(popAfter<=0){
+        logMsg('⚠️ '+ch.name+' se agoto en esta zona. Cambia a otra zona.','danger');
+      } else if(popAfter<=5){
+        logMsg('⚠️ '+ch.name+' casi desaparece de esta zona.','warn');
+      } else if(popAfter<=15){
+        logMsg('📉 Poblacion de '+ch.name+' baja.','warn');
+      }
+
       logMsg('Capturaste: '+ch.name+' | '+w+'kg | $'+val+(bonus>=1.4?' ★PERFECTO':''),'success');
       updateHUD();
     });
@@ -4194,6 +4264,7 @@ function getState(){
     completedMissions:safeCompleted,
     inventory:safeInventory,
     logbook:safeLogbook,
+    populations:G.populations||{},
   };
 }
 function restoreRefs(state){
