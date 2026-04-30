@@ -1,0 +1,95 @@
+// ─── DOM CACHE ──────────────────────────────────────────────
+const DOM={};
+function initDOMCache(){
+  // Hud elements
+  DOM.hudMoney=document.getElementById('hud-money');
+  DOM.hudFuel=document.getElementById('hud-fuel');
+  DOM.hudTime=document.getElementById('hud-time');
+  DOM.hudSeason=document.getElementById('hud-season');
+  DOM.hudWeather=document.getElementById('hud-weather');
+  DOM.hudTemp=document.getElementById('hud-temp');
+  DOM.hudDay=document.getElementById('hud-day');
+  DOM.hudCaught=document.getElementById('hud-caught');
+  DOM.hudInv=document.getElementById('hud-inv');
+  DOM.hudLevel=document.getElementById('hud-level');
+  // Bar elements
+  DOM.barEnergy=document.getElementById('bar-energy');
+  DOM.barHunger=document.getElementById('bar-hunger');
+  DOM.barThirst=document.getElementById('bar-thirst');
+  DOM.barEco=document.getElementById('bar-eco');
+  // Modal elements
+  DOM.modalOverlay=document.getElementById('modal-overlay');
+  DOM.modalTitle=document.getElementById('modal-title');
+  DOM.modalContent=document.getElementById('modal-content');
+  // Canvas elements
+  DOM.zoneMapCanvas=document.getElementById('zone-map-canvas');
+  DOM.lbEntryCanvas=document.getElementById('lb-entry-canvas');
+  DOM.cantinaInteriorCanvas=document.getElementById('cantina-interior-canvas');
+  // Fish elements
+  DOM.fishSelectOverlay=document.getElementById('fish-select-overlay');
+  DOM.fishOptionsContainer=document.getElementById('fish-options-container');
+  DOM.fishZone=document.getElementById('fish-zone');
+  DOM.fishCursor=document.getElementById('fish-cursor');
+  DOM.fishHint=document.getElementById('fish-hint');
+  // Catch elements
+  DOM.catchPopup=document.getElementById('catch-popup');
+  DOM.catchName=document.getElementById('catch-name');
+  DOM.catchValue=document.getElementById('catch-value');
+  DOM.catchDesc=document.getElementById('catch-desc');
+  // Method elements
+  DOM.methodSelectOverlay=document.getElementById('method-select-overlay');
+  DOM.methodOptionsContainer=document.getElementById('method-options-container');
+  // Zone elements
+  DOM.zoneName=document.getElementById('zone-name');
+  DOM.zoneSpecies=document.getElementById('zone-species');
+  DOM.zmTitle=document.getElementById('zm-title');
+  DOM.zmDesc=document.getElementById('zm-desc');
+  DOM.zmSpecies=document.getElementById('zm-species');
+  DOM.zmTargetSection=document.getElementById('zm-target-section');
+  DOM.zmChecklist=document.getElementById('zm-checklist');
+  DOM.zmEquipmentHint=document.getElementById('zm-equipment-hint');
+  DOM.zmCost=document.getElementById('zm-cost');
+  DOM.zmTravelBtn=document.getElementById('zm-travel-btn');
+  // Other elements
+  DOM.gameContainer=document.getElementById('game-container');
+  DOM.gameCanvas=document.getElementById('gameCanvas');
+  DOM.stormOverlay=document.getElementById('storm-overlay');
+  DOM.titleScreen=document.getElementById('title-screen');
+  DOM.titleCanvas=document.getElementById('titleCanvas');
+  DOM.playerCodeScreen=document.getElementById('player-code-screen');
+  DOM.playerCodeInput=document.getElementById('player-code-input');
+  DOM.playerCodeError=document.getElementById('player-code-error');
+  DOM.helpScreen=document.getElementById('help-screen');
+  DOM.hud=document.getElementById('hud');
+  DOM.ecoPct=document.getElementById('eco-pct');
+  DOM.ecoWarning=document.getElementById('eco-warning');
+  DOM.zoneIndicator=document.getElementById('zone-indicator');
+  DOM.zoneMapOverlay=document.getElementById('zone-map-overlay');
+  DOM.zoneMapBox=document.getElementById('zone-map-box');
+  DOM.fsDesc=document.getElementById('fs-desc');
+  DOM.fishingMinigame=document.getElementById('fishing-minigame');
+  DOM.messageLog=document.getElementById('message-log');
+  DOM.bottomPanel=document.getElementById('bottom-panel');
+  DOM.btnZManglar=document.getElementById('btn-z-manglar');
+  DOM.btnZArrecife=document.getElementById('btn-z-arrecife');
+  DOM.btnZAbierto=document.getElementById('btn-z-abierto');
+  DOM.btnFish=document.getElementById('btn-fish');
+  DOM.btnMethod=document.getElementById('btn-method');
+  DOM.catchCanvas=document.getElementById('catchCanvas');
+  DOM.logbookEntryOverlay=document.getElementById('logbook-entry-overlay');
+  DOM.lbEntryName=document.getElementById('lb-entry-name');
+  DOM.lbEntryDesc=document.getElementById('lb-entry-desc');
+  DOM.lbEntryZone=document.getElementById('lb-entry-zone');
+  DOM.cantinaScreen=document.getElementById('cantina-screen');
+  DOM.cantinaBox=document.getElementById('cantina-box');
+  DOM.cantinaTratos=document.getElementById('cantina-tratos');
+  DOM.cantinaVenta=document.getElementById('cantina-venta');
+  DOM.cantinaRumores=document.getElementById('cantina-rumores');
+  DOM.cantinaMenu=document.getElementById('cantina-menu');
+  DOM.cantinaMisiones=document.getElementById('cantina-misiones');
+  DOM.saveToast=document.getElementById('save-toast');
+  DOM.rareC=document.getElementById('rareC');
+}
+
+
+// Total IDs: 82

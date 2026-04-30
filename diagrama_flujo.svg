@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1200 1600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #0a1628; }
+      .box { fill: #1a4a6b; stroke: #5dade2; stroke-width: 2; }
+      .start-end { fill: #27ae60; stroke: #1e8449; stroke-width: 2; }
+      .decision { fill: #f39c12; stroke: #c27d0e; stroke-width: 2; }
+      .process { fill: #2980b9; stroke: #1f618d; stroke-width: 2; }
+      .text { font-family: Arial, sans-serif; font-size: 14px; fill: #ecf0f1; text-anchor: middle; }
+      .title { font-size: 28px; font-weight: bold; fill: #5dade2; }
+      .subtitle { font-size: 12px; fill: #a0c8e0; }
+      .arrow { stroke: #5dade2; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .section-title { font-size: 18px; font-weight: bold; fill: #f1c40f; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#5dade2" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="1600" class="bg"/>
+
+  <!-- Title -->
+  <text x="600" y="40" class="title">MAR VIVO - FLUJO DE JUEGO</text>
+  <text x="600" y="60" class="subtitle">Simulador de Pesca Sustentable</text>
+
+  <!-- ===== COLUMNA 1: INICIO Y SETUP ===== -->
+  <text x="150" y="100" class="section-title">INICIO</text>
+
+  <!-- Start -->
+  <rect x="50" y="120" width="200" height="60" rx="30" class="start-end"/>
+  <text x="150" y="155" class="text">INICIAR JUEGO</text>
+
+  <!-- Arrow -->
+  <path d="M 150 180 L 150 220" class="arrow"/>
+
+  <!-- Player Code -->
+  <rect x="50" y="220" width="200" height="60" class="box"/>
+  <text x="150" y="250" class="text">Ingresar Código</text>
+  <text x="150" y="270" class="subtitle">Cargar/Nueva Partida</text>
+
+  <!-- Arrow -->
+  <path d="M 150 280 L 150 320" class="arrow"/>
+
+  <!-- Initialize Game -->
+  <rect x="50" y="320" width="200" height="80" class="process"/>
+  <text x="150" y="350" class="text">Inicializar Juego</text>
+  <text x="150" y="370" class="subtitle">Cargar recursos</text>
+  <text x="150" y="390" class="subtitle">Poblaciones de peces</text>
+
+  <!-- ===== COLUMNA 2: CICLO PRINCIPAL ===== -->
+  <text x="450" y="100" class="section-title">CICLO PRINCIPAL</text>
+
+  <!-- HUD Display -->
+  <rect x="300" y="120" width="300" height="100" class="box"/>
+  <text x="450" y="145" class="text">PANTALLA PRINCIPAL</text>
+  <text x="450" y="165" class="subtitle">💰 Dinero | ⛽ Combustible</text>
+  <text x="450" y="182" class="subtitle">🍖 Energía | 🌊 Ecosistema</text>
+  <text x="450" y="199" class="subtitle">📍 Zona Actual | 🕐 Hora/Día</text>
+
+  <!-- Arrow from init to HUD -->
+  <path d="M 250 360 L 300 170" class="arrow" stroke-dasharray="5,5"/>
+
+  <!-- Arrow down -->
+  <path d="M 450 220 L 450 260" class="arrow"/>
+
+  <!-- Decision: Qué hacer -->
+  <polygon points="450,260 550,310 450,360 350,310" class="decision"/>
+  <text x="450" y="315" class="text">¿QUÉ HACER?</text>
+
+  <!-- Opción 1: Pescar -->
+  <path d="M 350 310 L 200 450" class="arrow"/>
+  <rect x="50" y="450" width="300" height="80" class="process"/>
+  <text x="200" y="480" class="text">1. PESCAR</text>
+  <text x="200" y="500" class="subtitle">Seleccionar zona</text>
+  <text x="200" y="520" class="subtitle">Seleccionar método</text>
+
+  <!-- Opción 2: Comerciar -->
+  <path d="M 450 360 L 450 420" class="arrow"/>
+  <rect x="300" y="420" width="300" height="80" class="process"/>
+  <text x="450" y="450" class="text">2. COMERCIAR</text>
+  <text x="450" y="470" class="subtitle">Vender peces</text>
+  <text x="450" y="490" class="subtitle">Comprar equipo</text>
+
+  <!-- Opción 3: Info -->
+  <path d="M 550 310 L 700 450" class="arrow"/>
+  <rect x="550" y="450" width="300" height="80" class="process"/>
+  <text x="700" y="480" class="text">3. INFORMACIÓN</text>
+  <text x="700" y="500" class="subtitle">Ver bitácora</text>
+  <text x="700" y="520" class="subtitle">Ver misiones</text>
+
+  <!-- ===== FLUJO DE PESCA DETALLADO ===== -->
+  <text x="150" y="590" class="section-title">FLUJO DE PESCA</text>
+
+  <!-- Validaciones -->
+  <rect x="50" y="610" width="300" height="80" class="decision" style="fill: #e74c3c;"/>
+  <text x="200" y="640" class="text">VALIDAR</text>
+  <text x="200" y="660" class="subtitle">¿Energía? ¿Inventario?</text>
+  <text x="200" y="680" class="subtitle">¿Combustible? ¿Tormenta?</text>
+
+  <!-- Fallo de validación -->
+  <path d="M 50 650 L -50 650 L -50 500" class="arrow" stroke-dasharray="5,5"/>
+  <text x="-60" y="575" class="subtitle">❌ No</text>
+
+  <!-- Continuar pesca -->
+  <path d="M 200 690 L 200 730" class="arrow"/>
+  <text x="220" y="715" class="subtitle">✓ Sí</text>
+
+  <!-- Seleccionar pez -->
+  <rect x="50" y="730" width="300" height="80" class="box"/>
+  <text x="200" y="760" class="text">Elegir Tipo de Pez</text>
+  <text x="200" y="780" class="subtitle">Random o Específico</text>
+  <text x="200" y="800" class="subtitle">Validar Equipo</text>
+
+  <!-- Arrow -->
+  <path d="M 200 810 L 200 850" class="arrow"/>
+
+  <!-- Mini-juego -->
+  <rect x="50" y="850" width="300" height="100" class="process" style="fill: #e67e22;"/>
+  <text x="200" y="880" class="text">🎮 MINI-JUEGO PESCA</text>
+  <text x="200" y="905" class="subtitle">Click en la zona verde</text>
+  <text x="200" y="925" class="subtitle">Timing = Éxito</text>
+  <text x="200" y="945" class="subtitle">Duración: según método</text>
+
+  <!-- Decision: Éxito/Fallo -->
+  <polygon points="200,950 280,1000 200,1050 120,1000" class="decision"/>
+  <text x="200" y="1005" class="text">RESULTADO</text>
+
+  <!-- Éxito -->
+  <path d="M 280 1000 L 420 1000" class="arrow"/>
+  <text x="340" y="990" class="subtitle">✓ Éxito</text>
+  <rect x="420" y="970" width="250" height="80" class="start-end"/>
+  <text x="545" y="1000" class="text">🐟 PESCA EXITOSA</text>
+  <text x="545" y="1025" class="subtitle">Registrar en bitácora</text>
+
+  <!-- Fallo -->
+  <path d="M 120 1000 L -50 1000" class="arrow"/>
+  <text x="-20" y="990" class="subtitle">❌ Fallo</text>
+  <rect x="-250" y="970" width="200" height="80" class="box" style="fill: #c0392b;"/>
+  <text x="-150" y="1000" class="text">PESCA FALLÓ</text>
+  <text x="-150" y="1025" class="subtitle">Consumir recursos</text>
+
+  <!-- ===== GESTIÓN DE RECURSOS ===== -->
+  <text x="900" y="100" class="section-title">GESTIÓN DE RECURSOS</text>
+
+  <!-- Estado del jugador -->
+  <rect x="750" y="120" width="300" height="120" class="box"/>
+  <text x="900" y="145" class="text">ESTADO JUGADOR</text>
+  <text x="900" y="165" class="subtitle">💰 Dinero: Venta/Gasto</text>
+  <text x="900" y="182" class="subtitle">⚡ Energía: -5% por acción</text>
+  <text x="900" y="199" class="subtitle">🍖 Hambre: +2% cada día</text>
+  <text x="900" y="216" class="subtitle">💧 Sed: +3% cada día</text>
+
+  <!-- Arrow down -->
+  <path d="M 900 240 L 900 280" class="arrow"/>
+
+  <!-- Consumo en Cantina -->
+  <rect x="750" y="280" width="300" height="100" class="process"/>
+  <text x="900" y="310" class="text">🍺 CANTINA</text>
+  <text x="900" y="330" class="subtitle">Restaurar Energía</text>
+  <text x="900" y="350" class="subtitle">Restaurar Hambre/Sed</text>
+
+  <!-- Arrow down -->
+  <path d="M 900 380 L 900 420" class="arrow"/>
+
+  <!-- Ecosistema -->
+  <rect x="750" y="420" width="300" height="100" class="decision" style="fill: #16a085;"/>
+  <text x="900" y="450" class="text">🌊 ECOSISTEMA</text>
+  <text x="900" y="470" class="subtitle">Cada captura reduce ECO</text>
+  <text x="900" y="490" class="subtitle">ECO bajo = Menos peces</text>
+
+  <!-- ===== CICLO DE TIEMPO ===== -->
+  <text x="900" y="590" class="section-title">CICLO DE TIEMPO</text>
+
+  <!-- Tick/Avance -->
+  <rect x="750" y="610" width="300" height="100" class="process"/>
+  <text x="900" y="640" class="text">⏰ AVANCE DE TIEMPO</text>
+  <text x="900" y="660" class="subtitle">Cada 6 segundos = 1 hora</text>
+  <text x="900" y="680" class="subtitle">6-8 AM, 5-8 PM = Bonus</text>
+
+  <!-- Arrow -->
+  <path d="M 900 710 L 900 750" class="arrow"/>
+
+  <!-- Fin de día -->
+  <rect x="750" y="750" width="300" height="100" class="box"/>
+  <text x="900" y="780" class="text">📅 FIN DE DÍA</text>
+  <text x="900" y="800" class="subtitle">Ecosistema se recupera</text>
+  <text x="900" y="820" class="subtitle">Recursos se reponen</text>
+
+  <!-- ===== LOOP PRINCIPAL ===== -->
+  <!-- Flecha que vuelve al ciclo principal -->
+  <path d="M 750 800 L 550 800 L 550 310" class="arrow" stroke-dasharray="5,5"/>
+  <text x="630" y="820" class="subtitle">Continuar jugando</text>
+
+  <!-- ===== LEYENDA ===== -->
+  <text x="150" y="1150" class="section-title">LEYENDA</text>
+
+  <rect x="50" y="1170" width="30" height="30" class="start-end" rx="15"/>
+  <text x="150" y="1190" class="text" text-anchor="start">Inicio/Fin</text>
+
+  <rect x="50" y="1220" width="30" height="30" class="process"/>
+  <text x="150" y="1240" class="text" text-anchor="start">Proceso/Acción</text>
+
+  <polygon points="65,1270 80,1285 65,1300 50,1285" class="decision"/>
+  <text x="150" y="1290" class="text" text-anchor="start">Decisión/Validación</text>
+
+  <rect x="50" y="1320" width="30" height="30" class="box"/>
+  <text x="150" y="1340" class="text" text-anchor="start">Información/Estado</text>
+
+  <!-- Información adicional -->
+  <rect x="400" y="1150" width="700" height="280" class="box" style="fill: #1a2a3a; opacity: 0.8"/>
+  <text x="750" y="1180" class="section-title">CARACTERÍSTICAS PRINCIPALES</text>
+
+  <text x="420" y="1210" class="text" text-anchor="start">🎣 Sistema de Pesca Multi-zona: Manglar, Arrecife, Mar Abierto</text>
+  <text x="420" y="1235" class="text" text-anchor="start">🛠️ 5 Métodos de Pesca: Anzuelo, Red, Trampa, Artesanal, Industrial</text>
+  <text x="420" y="1260" class="text" text-anchor="start">🐟 30+ Especies Únicas: Cada una con valor, rareza y equipo requerido</text>
+  <text x="420" y="1285" class="text" text-anchor="start">📊 Sistema de Ecosistema: Sostenibilidad afecta disponibilidad de peces</text>
+  <text x="420" y="1310" class="text" text-anchor="start">📖 Bitácora: Registra cada especie capturada (primero, raro, etc.)</text>
+  <text x="420" y="1335" class="text" text-anchor="start">💼 Mercado: Vender peces, Comprar equipo y artículos</text>
+  <text x="420" y="1360" class="text" text-anchor="start">🎯 Sistema de Misiones: Objetivos diarios y de progresión</text>
+  <text x="420" y="1385" class="text" text-anchor="start">🌙 Ciclo Día/Noche: Afecta disponibilidad de peces y bonus</text>
+  <text x="420" y="1410" class="text" text-anchor="start">⛈️ Sistema de Clima: Tormentas impiden pesca, cambian condiciones</text>
+
+</svg>
