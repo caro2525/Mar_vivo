@@ -7,6 +7,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Mar Vivo – Simulador de Pesca Sustentable</title>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+<script src="firebaseConfig.js"></script>
+<script>
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const actionsCollection = db.collection('actions');
+
+  // Expose to window for logging
+  window._fbDb = db;
+  window._fbAdd = (data) => actionsCollection.add(data);
+  window._fbTS = firebase.firestore.FieldValue.serverTimestamp;
+
+  console.log('[Firebase] Conectado a Firestore - proyecto: marvivo-8148d');
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
 
@@ -629,11 +644,23 @@
     <div class="game-title" style="margin-bottom:4px;">MAR VIVO</div>
     <div class="game-subtitle">Simulador de Pesca Sustentable</div>
     <br>
-    <button class="menu-btn" onclick="startGame()">NUEVA PARTIDA</button>
+    <button class="menu-btn" onclick="askPlayerCode()">NUEVA PARTIDA</button>
     <button class="menu-btn save-btn" onclick="openSaveLoad('load')">CARGAR PARTIDA</button>
     <button class="menu-btn" onclick="showHelp()">COMO JUGAR</button>
     <br>
     <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:#5dade250;text-align:center;z-index:1;margin-top:6px;">Un proyecto educativo sobre recursos pesqueros</div>
+  </div>
+
+  <div class="screen hidden" id="player-code-screen" style="background:rgba(5,12,22,.97);">
+    <div style="background:var(--ui-bg);border:3px solid var(--wave);padding:30px;max-width:380px;text-align:center;">
+      <div style="font-family:var(--font-pixel);color:var(--wave);font-size:clamp(8px,1.8vw,13px);margin-bottom:16px;">CÓDIGO DE PARTICIPANTE</div>
+      <input id="player-code-input" type="text" maxlength="20"
+        style="font-family:var(--font-pixel);font-size:clamp(10px,2vw,14px);padding:10px;background:#0d2240;border:2px solid var(--wave);color:var(--white);width:100%;text-align:center;letter-spacing:3px;text-transform:uppercase;"
+        placeholder="Ej: P001" />
+      <div id="player-code-error" style="color:var(--red);font-size:clamp(6px,1.2vw,9px);margin-top:8px;min-height:14px;"></div>
+      <button class="menu-btn" style="margin-top:14px;width:100%;" onclick="confirmPlayerCode()">COMENZAR</button>
+      <button class="menu-btn" style="margin-top:6px;width:100%;font-size:clamp(5px,1vw,8px);" onclick="document.getElementById('player-code-screen').classList.add('hidden');document.getElementById('title-screen').classList.remove('hidden')">VOLVER</button>
+    </div>
   </div>
 
   <div class="screen hidden" id="help-screen" style="background:rgba(5,12,22,.97);">
@@ -698,13 +725,7 @@
         <div class="zone-map-title" id="zm-title">MANGLAR</div>
         <div class="zone-map-desc" id="zm-desc">Descripción de zona</div>
         <div class="zone-map-species" id="zm-species"></div>
-        
-        <div id="zm-target-section">
-          <div class="zm-target-title">★ SELECCIONA ESPECIES OBJETIVO:</div>
-          <div class="zm-species-checklist" id="zm-checklist"></div>
-          <div class="zm-equipment-hint" id="zm-equipment-hint" style="display:none;"></div>
-        </div>
-        
+
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;">
           <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--gold)" id="zm-cost"></div>
           <button class="zone-enter-btn" id="zm-travel-btn">NAVEGAR AQUI</button>
@@ -942,7 +963,101 @@ const G={
   fishing:false,fishTimer:null,tickTimer:null,storm:false,stormTimer:null,ticks:0,
   targetSpecies:[],equipment:['anzuelo'],
   populations:{}, // Will be initialized with initPopulations()
+  playerCode:'',sessionId:'', // For logging player actions
 };
+
+// ─── LOGGER MODULE ─────────────────────────────────────────
+const Logger={
+  log(type,details){
+    if(!G.playerCode||!window._fbDb) return;
+    const entry={
+      participantCode:G.playerCode,
+      sessionId:G.sessionId,
+      timestamp:window._fbTS(),
+      localTime:new Date().toISOString(),
+      gameDay:G.day,
+      gameHour:G.hour,
+      type,
+      details
+    };
+    window._fbAdd(entry).catch(()=>{});
+  }
+};
+
+// ─── DOM CACHE ──────────────────────────────────────────────
+const DOM={};
+function initDOMCache(){
+  // HUD elements
+  DOM.hudMoney=document.getElementById('hud-money');
+  DOM.hudFuel=document.getElementById('hud-fuel');
+  DOM.hudCaught=document.getElementById('hud-caught');
+  DOM.hudInv=document.getElementById('hud-inv');
+  DOM.hudDay=document.getElementById('hud-day');
+  DOM.hudTime=document.getElementById('hud-time');
+  DOM.hudSeason=document.getElementById('hud-season');
+  DOM.hudWeather=document.getElementById('hud-weather');
+  DOM.hudTemp=document.getElementById('hud-temp');
+  DOM.hudLevel=document.getElementById('hud-level');
+  // Bar elements
+  DOM.barEnergy=document.getElementById('bar-energy');
+  DOM.barHunger=document.getElementById('bar-hunger');
+  DOM.barThirst=document.getElementById('bar-thirst');
+  DOM.barEco=document.getElementById('bar-eco');
+  // Modal elements
+  DOM.modalOverlay=document.getElementById('modal-overlay');
+  DOM.modalTitle=document.getElementById('modal-title');
+  DOM.modalContent=document.getElementById('modal-content');
+  // Game canvas
+  DOM.gameCanvas=document.getElementById('gameCanvas');
+  // Fish selection
+  DOM.fishSelectOverlay=document.getElementById('fish-select-overlay');
+  DOM.fishZone=document.getElementById('fish-zone');
+  DOM.fishOptionsContainer=document.getElementById('fish-options-container');
+  DOM.fishingMinigame=document.getElementById('fishing-minigame');
+  DOM.fishCursor=document.getElementById('fish-cursor');
+  DOM.fishHint=document.getElementById('fish-hint');
+  // Catch popup
+  DOM.catchPopup=document.getElementById('catch-popup');
+  DOM.catchName=document.getElementById('catch-name');
+  DOM.catchValue=document.getElementById('catch-value');
+  DOM.catchDesc=document.getElementById('catch-desc');
+  DOM.catchCanvas=document.getElementById('catchCanvas');
+  // Message log
+  DOM.messageLog=document.getElementById('message-log');
+  // Methods
+  DOM.methodSelectOverlay=document.getElementById('method-select-overlay');
+  DOM.methodOptionsContainer=document.getElementById('method-options-container');
+  DOM.btnMethod=document.getElementById('btn-method');
+  DOM.btnFish=document.getElementById('btn-fish');
+  // Zone map
+  DOM.zoneMapOverlay=document.getElementById('zone-map-overlay');
+  DOM.zmTitle=document.getElementById('zm-title');
+  DOM.zmDesc=document.getElementById('zm-desc');
+  DOM.zmSpecies=document.getElementById('zm-species');
+  DOM.zmCost=document.getElementById('zm-cost');
+  DOM.zmTravelBtn=document.getElementById('zm-travel-btn');
+  DOM.zoneMapCanvas=document.getElementById('zone-map-canvas');
+  // Storm overlay
+  DOM.stormOverlay=document.getElementById('storm-overlay');
+  // Other screens
+  DOM.titleScreen=document.getElementById('title-screen');
+  DOM.titleCanvas=document.getElementById('titleCanvas');
+  DOM.helpScreen=document.getElementById('help-screen');
+  DOM.cantinaScreen=document.getElementById('cantina-screen');
+  DOM.cantinaInteriorCanvas=document.getElementById('cantina-interior-canvas');
+  // Save toast
+  DOM.saveToast=document.getElementById('save-toast');
+  // Logbook
+  DOM.logbookEntryOverlay=document.getElementById('logbook-entry-overlay');
+  DOM.lbEntryName=document.getElementById('lb-entry-name');
+  DOM.lbEntryDesc=document.getElementById('lb-entry-desc');
+  DOM.lbEntryZone=document.getElementById('lb-entry-zone');
+  DOM.lbEntryCanvas=document.getElementById('lb-entry-canvas');
+  // Eco
+  DOM.ecoPct=document.getElementById('eco-pct');
+  DOM.ecoWarning=document.getElementById('eco-warning');
+  DOM.rareC=document.getElementById('rareC');
+}
 
 // ─── SPECIES ───────────────────────────────────────────────
 const SPECIES={
@@ -1049,9 +1164,53 @@ function initWaves(){
 function initFishEntities(){
   fishEntities=[];
   const pool=SPECIES[G.zone]||SPECIES.manglar;
-  for(let i=0;i<10;i++){
-    const sp=pool[Math.floor(Math.random()*pool.length)];
+  const pops=G.populations?.[G.zone]||{};
+
+  // Health ratio: total current pop vs. max possible
+  let totalPop=0;
+  pool.forEach(sp=>{ totalPop+=Math.max(0,pops[sp.name]||0); });
+  const maxPossible=pool.length*60;
+  const healthRatio=maxPossible>0?totalPop/maxPossible:1;
+
+  // Scale visible fish count: 3 (fully depleted) → 15 (fully thriving)
+  const fishCount=Math.round(3+healthRatio*12);
+
+  // Weighted pool: species with more population appear proportionally more
+  const weightedPool=[];
+  pool.forEach(sp=>{
+    const pop=Math.max(0,pops[sp.name]||0);
+    if(pop>0){
+      const weight=Math.max(1,Math.round(pop/12));
+      for(let w=0;w<weight;w++) weightedPool.push(sp);
+    }
+  });
+  const srcPool=weightedPool.length>0?weightedPool:pool;
+
+  for(let i=0;i<fishCount;i++){
+    const sp=srcPool[Math.floor(Math.random()*srcPool.length)];
     fishEntities.push({x:Math.random()*canvas.width,y:canvas.height*(.40+Math.random()*.24),dir:Math.random()>.5?1:-1,speed:.4+Math.random()*1.3,sp,bob:Math.random()*Math.PI*2});
+  }
+}
+
+function syncFishEntities(zone, speciesName){
+  if(zone!==G.zone) return;
+  const pop=getPopulation(zone,speciesName);
+
+  // Remove one visual fish of this species if its population is critically low
+  if(pop<=5){
+    const idx=fishEntities.findIndex(f=>f.sp.name===speciesName);
+    if(idx>-1) fishEntities.splice(idx,1);
+  }
+
+  // Trim total count to match current health target
+  const pool=SPECIES[zone]||SPECIES.manglar;
+  const pops=G.populations?.[zone]||{};
+  let totalPop=0;
+  pool.forEach(sp=>{ totalPop+=Math.max(0,pops[sp.name]||0); });
+  const healthRatio=totalPop/(pool.length*60);
+  const target=Math.round(3+healthRatio*12);
+  while(fishEntities.length>target+2){
+    fishEntities.splice(Math.floor(Math.random()*fishEntities.length),1);
   }
 }
 
@@ -1087,6 +1246,7 @@ function getPopulation(zone,speciesName){
 function reducePopulation(zone,speciesName,amount=1){
   if(G.populations[zone] && G.populations[zone][speciesName]){
     G.populations[zone][speciesName]=Math.max(0,G.populations[zone][speciesName]-amount);
+    syncFishEntities(zone,speciesName);
   }
 }
 
@@ -1103,6 +1263,9 @@ function replenishPopulations(){
       }
     });
   });
+
+  // Refresh visible fish to reflect recovery
+  if(G.running) initFishEntities();
 }
 
 // ─── PIXEL ART HELPERS ─────────────────────────────────────
@@ -2717,6 +2880,25 @@ function animTitle(){
   requestAnimationFrame(animTitle);
 }
 
+// ─── PLAYER CODE INPUT ─────────────────────────────────────
+function askPlayerCode(){
+  document.getElementById('title-screen').classList.add('hidden');
+  document.getElementById('player-code-screen').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('player-code-input').focus(),100);
+}
+
+function confirmPlayerCode(){
+  const code=document.getElementById('player-code-input').value.trim().toUpperCase();
+  const err=document.getElementById('player-code-error');
+  if(!code){ err.textContent='Ingresa un código de participante.'; return; }
+  err.textContent='';
+  G.playerCode=code;
+  const now=new Date();
+  G.sessionId=`${code}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+  document.getElementById('player-code-screen').classList.add('hidden');
+  startGame();
+}
+
 // ─── GAME LOGIC ────────────────────────────────────────────
 function startGame(saved=null){
   if(saved){
@@ -2746,6 +2928,8 @@ function showDaySummary(day){
   const earned=(G.money||0)-(G._dayStartMoney||0);
   const caught=(G.caught||0)-(G._dayStartCaught||0);
   const ecoStatus=G.eco>70?'Excelente':'El mar necesita descanso';
+  const lv=getCurrentLevel();
+  Logger.log('day_summary',{day:day-1,money_earned:earned,fish_caught:caught,eco_current:G.eco,xp_total:G.xp||0,level:lv.name});
   openModal(`FIN DEL DIA ${day}`,`
     <div style="text-align:center;padding:10px 0 4px">
       <div style="font-family:var(--font-pixel);font-size:clamp(7px,1.2vw,10px);color:var(--gold);margin-bottom:14px;">Resumen del dia</div>
@@ -2818,7 +3002,8 @@ function startStorm(){
 function changeZone(z){
   if(G.storm){logMsg('No puedes salir con la tormenta.','danger');return;}
   if(G.fuel<ZONE_INFO[z].fuelCost){logMsg('Sin combustible suficiente.','warn');return;}
-  G.zone=z; G.fuel=Math.max(0,G.fuel-ZONE_INFO[z].fuelCost);
+  const fuelCost=ZONE_INFO[z].fuelCost;Logger.log('zone_change',{from_zone:G.zone,to_zone:z,fuel_cost:fuelCost,fuel_remaining:G.fuel-fuelCost});
+  G.zone=z; G.fuel=Math.max(0,G.fuel-fuelCost);
   // Update zone button highlights
   ['manglar','arrecife','abierto'].forEach(zn=>{
     const b=document.getElementById('btn-z-'+zn);
@@ -2902,6 +3087,7 @@ function closeMethodSelect(){
 
 function confirmMethodSelection(){
   if(!_selectedMethodType) return;
+  Logger.log('method_change',{from_method:G.method,to_method:_selectedMethodType});
   G.method=_selectedMethodType;
   G.methodIdx=G.methods.indexOf(_selectedMethodType);
   const mi=METHOD_INFO[G.method];
@@ -2917,39 +3103,25 @@ let _selectedFishType=null;
 function openFishSelect(){
   const pool=SPECIES[G.zone];
   const container=document.getElementById('fish-options-container');
+  if(!container)return;
   container.innerHTML='';
   _selectedFishType=null;
-  
-  // Filtrar por especies objetivo si existen
-  let displayPool=pool;
-  if(G.targetSpecies.length>0){
-    displayPool=pool.filter(sp=>G.targetSpecies.includes(sp.name));
-  }
-  
-  // Agregar opción de cualquier pez (aleatorio) - solo si no hay objetivos
-  if(G.targetSpecies.length===0){
-    const anyOption=document.createElement('div');
-    anyOption.className='fish-option';
-    anyOption.onclick=()=>selectFishType(null,anyOption);
-    anyOption.innerHTML=`
-      <canvas class="fish-option-icon" width="32" height="24"></canvas>
-      <div class="fish-option-info">
-        <div class="fish-option-name" style="color:var(--gold)">★ CUALQUIER PEZ</div>
-        <div class="fish-option-details">Azar según probabilidad</div>
-        <div class="fish-option-value">Sin bonus</div>
-      </div>
-    `;
-    container.appendChild(anyOption);
-  } else {
-    // Mostrar que se filtran por objetivos
-    const header=document.createElement('div');
-    header.style.fontFamily='var(--font-vt)';
-    header.style.fontSize='clamp(11px,1.6vw,14px)';
-    header.style.color='var(--gold)';
-    header.style.marginBottom='8px';
-    header.textContent='★ ESPECIES OBJETIVO ('+displayPool.length+'):';
-    container.appendChild(header);
-  }
+
+  const displayPool=pool;
+
+  // Opción de cualquier pez (aleatorio)
+  const anyOption=document.createElement('div');
+  anyOption.className='fish-option';
+  anyOption.onclick=()=>selectFishType(null,anyOption);
+  anyOption.innerHTML=`
+    <canvas class="fish-option-icon" width="32" height="24"></canvas>
+    <div class="fish-option-info">
+      <div class="fish-option-name" style="color:var(--gold)">★ CUALQUIER PEZ</div>
+      <div class="fish-option-details">Azar según probabilidad</div>
+      <div class="fish-option-value">Sin bonus</div>
+    </div>
+  `;
+  container.appendChild(anyOption);
   
   // Agregar opciones de cada especie
   displayPool.forEach((sp,idx)=>{
@@ -3004,22 +3176,11 @@ function startFishingWithType(preferredFish){
   if(G.storm){logMsg('No puedes pescar en la tormenta.','danger');return;}
   if(G.energy<5){logMsg('Sin energia.','danger');return;}
   if(G.inventory.length>=20){logMsg('Inventario lleno.','warn');return;}
-  
-  // Validar especies objetivo si existen
-  if(G.targetSpecies.length>0 && preferredFish){
-    if(!G.targetSpecies.includes(preferredFish.name)){
-      logMsg('Esta especie NO es objetivo. Selecciona un objetivo valido.','warn');
-      return;
-    }
-    // Validar equipo
-    if(preferredFish.equipment && !preferredFish.equipment.includes(G.method)){
-      const equipStr=preferredFish.equipment.join(' o ');
-      logMsg(`Equipo invalido. ${preferredFish.name} requiere: ${equipStr}`,'danger');
-      return;
-    }
-  } else if(G.targetSpecies.length>0 && !preferredFish){
-    // Si hay objetivos pero se intenta capturar cualquier pez
-    logMsg('Debes seleccionar una de tus especies objetivo.','warn');
+
+  // Validar equipo si se selecciona un pez específico
+  if(preferredFish && preferredFish.equipment && !preferredFish.equipment.includes(G.method)){
+    const equipStr=preferredFish.equipment.join(' o ');
+    logMsg(`Equipo invalido. ${preferredFish.name} requiere: ${equipStr}`,'danger');
     return;
   }
   
@@ -3030,8 +3191,8 @@ function startFishingWithType(preferredFish){
   btn.textContent='Pescando...'; 
   SFX.cast();
   
-  const hm=(G.hour>=5&&G.hour<=8)||(G.hour>=17&&G.hour<=20)?.8:1;
-  const tm=G.temp>28?1.15:G.temp<18?.85:1;
+  const hm=((G.hour>=5&&G.hour<=8)||(G.hour>=17&&G.hour<=20))?0.8:1;
+  const tm=G.temp>28?1.15:G.temp<18?0.85:1;
   
   G.fishTimer=setTimeout(()=>{
     G.fishing=false; 
@@ -3040,6 +3201,7 @@ function startFishingWithType(preferredFish){
     G.energy=Math.max(0,G.energy-8);
     
     if(Math.random()<mt.miss*hm){
+      Logger.log('fish_miss',{zone:G.zone,method:G.method,target_species:G.targetSpecies,reason:'miss'});
       logMsg('El pez se escapo...','');
       SFX.miss();
       updateHUD();
@@ -3095,7 +3257,7 @@ function startFishingWithType(preferredFish){
       reducePopulation(G.zone,ch.name,1);
       const popAfter=getPopulation(G.zone,ch.name);
 
-      G.caught++; recordLB(ch); showCatchPopup(ch,w,val); spawnParticles(ch); SFX.catch(); checkMissionProgress(ch.name); addXP(Math.round(5+ch.eco*3+(bonus>=1.4?15:bonus>=1.2?8:0)));
+      G.caught++; Logger.log('catch',{species:ch.name,zone:G.zone,method:G.method,weight:w,value:val,eco_impact:ch.eco,bonus_level:bonus>=1.4?'perfect':bonus>=1.2?'good':'normal',population_after:popAfter}); recordLB(ch); showCatchPopup(ch,w,val); spawnParticles(ch); SFX.catch(); checkMissionProgress(ch.name); addXP(Math.round(5+ch.eco*3+(bonus>=1.4?15:bonus>=1.2?8:0)));
 
       // Population warning messages
       if(popAfter<=0){
@@ -3113,7 +3275,6 @@ function startFishingWithType(preferredFish){
 }
 
 function fish(){
-  // Abrir modal de selección de tipo de pez
   if(G.fishing){logMsg('Ya estas pescando.','warn');return;}
   if(G.storm){logMsg('No puedes pescar en la tormenta.','danger');return;}
   if(G.energy<5){logMsg('Sin energia.','danger');return;}
@@ -3371,22 +3532,30 @@ function openMarket(){
 function sellItem(name){
   const idx=G.inventory.findIndex(i=>i.name===name);if(idx===-1)return;
   const it=G.inventory[idx],p=it.unitValue||Math.round(it.totalValue/it.qty);
+  const moneyBefore=G.money;
+  Logger.log('sale',{species:name,qty:1,value:p,money_before:moneyBefore,money_after:moneyBefore+p});
   G.money+=p;it.qty--;it.totalValue-=p;if(it.qty<=0)G.inventory.splice(idx,1);
   logMsg('Vendiste 1 '+name+' por $'+p,'success');SFX.sell();openMarket();updateHUD();
 }
 function sellAllItem(name){
   const idx=G.inventory.findIndex(i=>i.name===name);if(idx===-1)return;
-  const tv=G.inventory[idx].totalValue;G.money+=tv;G.inventory.splice(idx,1);
+  const tv=G.inventory[idx].totalValue,qty=G.inventory[idx].qty;
+  const moneyBefore=G.money;
+  Logger.log('sale',{species:name,qty:qty,value:tv,money_before:moneyBefore,money_after:moneyBefore+tv});
+  G.money+=tv;G.inventory.splice(idx,1);
   logMsg('Vendiste todo por $'+tv,'success');SFX.sell();openMarket();updateHUD();
 }
 function buySupply(type){
   const c={food:80,water:40,fuel:150,line:300};
   if(G.money<c[type]){logMsg('Sin dinero suficiente.','danger');SFX.alert();return;}
-  G.money-=c[type];
-  if(type==='food'){G.hunger=Math.min(100,G.hunger+60);logMsg('+60 Hambre','success');}
-  if(type==='water'){G.thirst=Math.min(100,G.thirst+60);logMsg('+60 Sed','success');}
-  if(type==='fuel'){G.fuel=Math.min(100,G.fuel+50);logMsg('+50% Combustible','success');}
-  if(type==='line')logMsg('Linea premium equipada.','success');
+  const cost=c[type];
+  let statBefore=0,statAfter=0;
+  if(type==='food'){statBefore=G.hunger;G.hunger=Math.min(100,G.hunger+60);statAfter=G.hunger;logMsg('+60 Hambre','success');}
+  else if(type==='water'){statBefore=G.thirst;G.thirst=Math.min(100,G.thirst+60);statAfter=G.thirst;logMsg('+60 Sed','success');}
+  else if(type==='fuel'){statBefore=G.fuel;G.fuel=Math.min(100,G.fuel+50);statAfter=G.fuel;logMsg('+50% Combustible','success');}
+  else if(type==='line')logMsg('Linea premium equipada.','success');
+  Logger.log('purchase',{item_type:type,cost:cost,stat_before:statBefore,stat_after:statAfter});
+  G.money-=cost;
   openMarket();updateHUD();
 }
 
@@ -3534,23 +3703,7 @@ function openZoneMap(zone){
   const specEl=document.getElementById('zm-species');
   specEl.innerHTML=zd.species.map(s=>`<span class="zone-species-chip">${s}</span>`).join('');
   document.getElementById('zm-cost').textContent='Combustible: '+zd.fuelCost+'% | Riesgo: '+zd.riskLevel;
-  
-  // Generar checkboxes de especies objetivo
-  const checklistEl=document.getElementById('zm-checklist');
-  checklistEl.innerHTML='';
-  const pool=SPECIES[zone]||[];
-  pool.forEach((sp,idx)=>{
-    const isSelected=G.targetSpecies.includes(sp.name);
-    const equipStr=sp.equipment?sp.equipment.join(', '):'Cualquier equipo';
-    const checkDiv=document.createElement('div');
-    checkDiv.className='zm-species-option';
-    checkDiv.innerHTML=`
-      <input type="checkbox" id="zmsp_${idx}" ${isSelected?'checked':''} onchange="toggleTargetSpecies('${sp.name}')">
-      <label for="zmsp_${idx}">${sp.name}</label>
-    `;
-    checklistEl.appendChild(checkDiv);
-  });
-  
+
   const tBtn=document.getElementById('zm-travel-btn');
   if(zone===G.zone){
     tBtn.textContent='ZONA ACTUAL';
@@ -3567,41 +3720,6 @@ function openZoneMap(zone){
 
 function closeZoneMap(){
   document.getElementById('zone-map-overlay').classList.remove('show');
-}
-
-function toggleTargetSpecies(speciesName){
-  const idx=G.targetSpecies.indexOf(speciesName);
-  if(idx>=0){
-    G.targetSpecies.splice(idx,1);
-  } else {
-    G.targetSpecies.push(speciesName);
-  }
-  updateEquipmentHint();
-}
-
-function updateEquipmentHint(){
-  const hintEl=document.getElementById('zm-equipment-hint');
-  if(G.targetSpecies.length===0){
-    hintEl.style.display='none';
-    return;
-  }
-  
-  const zone=_currentZoneMap;
-  const pool=SPECIES[zone]||[];
-  const targetSp=pool.filter(sp=>G.targetSpecies.includes(sp.name));
-  
-  // Buscar equipo común
-  const allEquipment=new Set();
-  targetSp.forEach(sp=>{
-    if(sp.equipment) sp.equipment.forEach(eq=>allEquipment.add(eq));
-  });
-  
-  if(allEquipment.size>0){
-    hintEl.textContent='Equipos recomendados: '+Array.from(allEquipment).join(', ');
-    hintEl.style.display='block';
-  } else {
-    hintEl.style.display='none';
-  }
 }
 
 function drawZoneMapCanvas(zone,zd){
@@ -4347,8 +4465,18 @@ window.addEventListener('resize',()=>{
   checkOrientation();
 });
 
-initCanvas();
-initTitleCanvas();
+try{
+  console.log('[INIT] Starting game initialization...');
+  initDOMCache();
+  console.log('[INIT] ✓ DOM cache initialized');
+  initCanvas();
+  console.log('[INIT] ✓ Canvas initialized');
+  initTitleCanvas();
+  console.log('[INIT] ✓ Title canvas initialized - Game ready!');
+}catch(e){
+  console.error('[INIT ERROR]', e.message, e);
+  console.error('[STACK]', e.stack);
+}
 </script>
 </body>
 </html>

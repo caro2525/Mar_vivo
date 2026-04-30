@@ -1,0 +1,26 @@
+# Configuration files with credentials
+config.txt
+.env
+.env.local
+.env.*.local
+
+# Firebase config
+firebaseConfig.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node/npm (if used)
+node_modules/
+package-lock.json
