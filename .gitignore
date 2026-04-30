@@ -24,3 +24,25 @@ Thumbs.db
 # Node/npm (if used)
 node_modules/
 package-lock.json
+
+# Office documents (not code)
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+*.odt
+*.ods
+*.odp
+
+# Process/PID files
+*.pid
+server.pid
+
+# System/temporary files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
