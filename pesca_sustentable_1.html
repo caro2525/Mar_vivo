@@ -1146,6 +1146,11 @@ const VILLAGERS_DEF=[
   {xR:.17,yR:.795,type:'scientist',dir:-1,speed:.10},
   {xR:.07,yR:.810,type:'elder',    dir:1, speed:.07},
   {xR:.23,yR:.790,type:'boy',      dir:-1,speed:.18},
+  {xR:.62,yR:.770,type:'fisherman',dir:1, speed:.14},
+  {xR:.68,yR:.785,type:'scientist',dir:-1,speed:.11},
+  {xR:.75,yR:.760,type:'elder',    dir:1, speed:.08},
+  {xR:.82,yR:.780,type:'boy',      dir:-1,speed:.16},
+  {xR:.90,yR:.765,type:'fisherman',dir:1, speed:.13},
 ];
 let villagers=[];
 
@@ -1579,7 +1584,7 @@ function drawVillage(W,H){
     const lb=isPortrait?W*0.04:W*0.56, rb=isPortrait?W*0.96:W*0.92;
     if(v.px>rb)v.dir=-1; if(v.px<lb)v.dir=1;
     const vy=H*v.yR+Math.sin(wt*2.5+v.px*0.02)*1;
-    drawVillager(v.px,vy,v.type,v.dir>0,1.2);
+    drawVillager(v.px,vy,v.type,v.dir>0,1.3);
   }
 
   // Night lamp glow
