@@ -1142,16 +1142,45 @@ function initBirds(){
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
-  {xR:.10,yR:.775,type:'fisherman',dir:1, speed:.15},
-  {xR:.17,yR:.795,type:'scientist',dir:-1,speed:.10},
-  {xR:.07,yR:.810,type:'elder',    dir:1, speed:.07},
-  {xR:.23,yR:.790,type:'boy',      dir:-1,speed:.18},
-  {xR:.62,yR:.770,type:'fisherman',dir:1, speed:.14},
-  {xR:.68,yR:.785,type:'scientist',dir:-1,speed:.11},
-  {xR:.75,yR:.760,type:'elder',    dir:1, speed:.08},
-  {xR:.82,yR:.780,type:'boy',      dir:-1,speed:.16},
-  {xR:.90,yR:.765,type:'fisherman',dir:1, speed:.13},
+  {xR:.10,yR:.775,type:'fisherman',dir:1, speed:.15, variant:0},
+  {xR:.17,yR:.795,type:'scientist',dir:-1,speed:.10, variant:1},
+  {xR:.07,yR:.810,type:'elder',    dir:1, speed:.07, variant:2},
+  {xR:.23,yR:.790,type:'boy',      dir:-1,speed:.18, variant:0},
+  {xR:.62,yR:.770,type:'fisherman',dir:1, speed:.14, variant:1},
+  {xR:.68,yR:.785,type:'scientist',dir:-1,speed:.11, variant:2},
+  {xR:.75,yR:.760,type:'elder',    dir:1, speed:.08, variant:0},
+  {xR:.82,yR:.780,type:'boy',      dir:-1,speed:.16, variant:1},
+  {xR:.90,yR:.765,type:'fisherman',dir:1, speed:.13, variant:2},
 ];
+
+const VILLAGER_STYLE_MAP={
+  fisherman:[
+    {body:'#c89040',hat:'#b07028',pants:'#1a4a80',shoes:'#3a2810',accent:'#e8b870',rod:'#7d4a14'},
+    {body:'#8b5e2c',hat:'#6f491f',pants:'#204d72',shoes:'#2f210f',accent:'#d9a564',rod:'#6b3f10'},
+    {body:'#b0603a',hat:'#8b5928',pants:'#214f78',shoes:'#3b2a12',accent:'#d8a060',rod:'#714314'}
+  ],
+  scientist:[
+    {body:'#3050a0',coat:'#e8e8e8',pants:'#283c68',shoes:'#1a1a2a',accent:'#7aa4e4',backpack:'#5080c0'},
+    {body:'#2a4a8c',coat:'#f0f0f0',pants:'#2d4168',shoes:'#1c1c1c',accent:'#6aa0d8',backpack:'#4874b0'},
+    {body:'#2f5a92',coat:'#dee2ea',pants:'#273c62',shoes:'#1f1f1f',accent:'#94b4e4',backpack:'#5f85c4'}
+  ],
+  elder:[
+    {body:'#7a5830',shawl:'#a07040',pants:'#423010',shoes:'#2f200f',hair:'#c0c0c0'},
+    {body:'#8c6438',shawl:'#9b5f2d',pants:'#4a351f',shoes:'#34250f',hair:'#b8b8b8'},
+    {body:'#6e4d2e',shawl:'#b38b53',pants:'#3f2f1f',shoes:'#2b1f0e',hair:'#d1d1d1'}
+  ],
+  boy:[
+    {body:'#b03030',backpack:'#3060a0',pants:'#203060',shoes:'#2a1a10',hair:'#402010'},
+    {body:'#b04b30',backpack:'#4070a8',pants:'#243e70',shoes:'#2f1d12',hair:'#402810'},
+    {body:'#a3363a',backpack:'#3a68a0',pants:'#223d68',shoes:'#2c1a0f',hair:'#402414'}
+  ]
+};
+
+function getVillagerStyle(type,variant){
+  const list = VILLAGER_STYLE_MAP[type] || VILLAGER_STYLE_MAP.boy;
+  return list[variant % list.length];
+}
+
 let villagers=[];
 
 function initNpcBoats(){
@@ -2411,21 +2440,19 @@ function drawVillager(x,y,type,faceR,scale=1){
   px(-2,-11,4,1,shade(skinC,-20));
   // Type-specific
   if(type==='fisherman'){
-    // Hat
-    px(-7,-28,14,8,'#c89040'); px(-5,-34,10,8,'#c89040'); px(-9,-22,18,4,'#a07020');
-    // Fishing rod
-    ctx.strokeStyle='#7d4a14'; ctx.lineWidth=2;
+    const hatC=style.hat||'#c89040';
+    px(-7,-28,14,8,hatC); px(-5,-34,10,8,hatC); px(-9,-22,18,4,shade(hatC,-15));
+    ctx.strokeStyle=style.rod||'#7d4a14'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(20,-18); ctx.stroke();
     ctx.strokeStyle='rgba(255,255,200,.55)'; ctx.lineWidth=1; ctx.setLineDash([2,2]);
     ctx.beginPath(); ctx.moveTo(20,-18); ctx.lineTo(24+Math.sin(wt*1.5)*5,5); ctx.stroke();
     ctx.setLineDash([]);
   } else if(type==='scientist'){
-    // Lab coat
-    px(-7,-5,3,10,'#e8e8e8'); px(4,-5,3,10,'#e8e8e8');
-    // Glasses
+    const coatC=style.coat||'#e8e8e8';
+    px(-7,-5,3,10,coatC); px(4,-5,3,10,coatC);
+    px(-7,-5,8,10,shade(coatC,-10)); px(4,-5,8,10,shade(coatC,-10));
     px(-5,-16,3,2,'#404040'); px(1,-16,3,2,'#404040'); px(-2,-15,2,1,'#404040');
-    // Clipboard
-    px(7,0,8,10,'#f0d080'); px(8,1,6,8,'#e8e8e8');
+    px(7,0,8,10,style.backpack||'#f0d080'); px(8,1,6,8,shade(style.backpack||'#f0d080',-15));
   } else if(type==='elder'){
     // Grey hair
     px(-5,-26,10,8,'#c0c0c0');
