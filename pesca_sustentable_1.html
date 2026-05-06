@@ -943,6 +943,7 @@ function checkOrientation(){
       boatY = cv.height * 0.50;
       if(typeof initWaves === 'function') initWaves();
       if(typeof initBirds === 'function') initBirds();
+      if(typeof initNpcBoats === 'function') initNpcBoats();
       if(typeof VILLAGERS_DEF !== 'undefined')
         villagers = VILLAGERS_DEF.map(v=>({...v,px:v.xR*cv.width}));
     }
@@ -1107,7 +1108,7 @@ const canvas=document.getElementById('gameCanvas');
 const ctx=canvas.getContext('2d');
 let wt=0;
 let boatX,boatY;
-let waves=[],particles=[],fishEntities=[],seaBirds=[];
+let waves=[],particles=[],fishEntities=[],seaBirds=[],npcBoats=[];
 let tc=null,tcx=null,tw=0,th=0,tt=0;
 
 function initBirds(){
@@ -1148,12 +1149,27 @@ const VILLAGERS_DEF=[
 ];
 let villagers=[];
 
+function initNpcBoats(){
+  npcBoats = [];
+  for(let i = 0; i < 3; i++){
+    npcBoats.push({
+      x: Math.random() * canvas.width * 0.8 + canvas.width * 0.1, // Random position across the sea
+      y: canvas.height * (0.45 + Math.random() * 0.1), // Around the water level
+      dir: Math.random() > 0.5 ? 1 : -1, // Random direction
+      speed: 0.2 + Math.random() * 0.3, // Slow movement
+      fishing: false,
+      fishingTimer: null,
+      bob: Math.random() * Math.PI * 2 // For bobbing animation
+    });
+  }
+}
+
 function initCanvas(){
   canvas.width=window.innerWidth; canvas.height=window.innerHeight;
   // Scale pixel art to screen - bigger pixels on small screens for crisp look
   PS=Math.max(1,Math.min(2.5,window.innerWidth/560));
   boatX=canvas.width*.28; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
-  initWaves(); initFishEntities(); initBirds();
+  initWaves(); initFishEntities(); initBirds(); initNpcBoats();
   villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
   renderLoop();
 }
@@ -2696,6 +2712,18 @@ function renderLoop(){
   // ── LAYER 5: BOAT (behind structures) ──
   if(boatX>W*0.54) boatX=W*0.22;
   drawBoat(boatX,boatY);
+  
+  // Draw NPC boats
+  npcBoats.forEach(boat => {
+    drawBoat(boat.x, boat.y);
+    // Draw fishing line if fishing
+    if(boat.fishing){
+      const lx = boat.x + 14, ly = boat.y + 26 + Math.sin(wt*3)*8;
+      ctx.strokeStyle='rgba(255,255,200,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(boat.x+20, boat.y-8); ctx.lineTo(lx, ly+30); ctx.stroke(); ctx.setLineDash([]);
+      px(lx-3, ly+30, 8, 5, '#e74c3c'); px(lx-1, ly+30, 4, 2, '#fff');
+    }
+  });
 
   // ── LAYER 6: VILLAGE (ground + dock + buildings = TOP LAYER) ──
   drawVillage(W,H);
@@ -2919,7 +2947,7 @@ function startGame(saved=null){
   logMsg('Bienvenido a Bahia Viva, pescador.','success');
   logMsg('Elige tu zona y metodo para comenzar.','');
   setTimeout(()=>logMsg('TIP: Cuida el ECO para no agotar el mar.','warn'),2000);
-  initFishEntities();
+  initFishEntities(); initNpcBoats();
 }
 
 
@@ -2982,6 +3010,7 @@ function gameTick(){
   ecow.style.display=G.eco<20?'block':'none';
   if(G.eco<20&&wasHidden) SFX.alert();
   if(G.eco<70&&G.ticks%6===0)G.eco=Math.min(100,G.eco+.4);
+  updateNpcBoats();
   updateHUD();
 }
 
@@ -3009,7 +3038,7 @@ function changeZone(z){
     const b=document.getElementById('btn-z-'+zn);
     if(b) b.classList.toggle('active',zn===z);
   });
-  updateZoneUI(); logMsg('Navegaste al '+ZONE_INFO[z].name+'.',''); initFishEntities(); updateHUD();
+  updateZoneUI(); logMsg('Navegaste al '+ZONE_INFO[z].name+'.',''); initFishEntities(); initNpcBoats(); updateHUD();
 }
 function updateZoneUI(){const zi=ZONE_INFO[G.zone];document.getElementById('zone-name').textContent=zi.name;document.getElementById('zone-species').textContent=zi.species;}
 
@@ -3621,6 +3650,40 @@ function openLogbook(){
       }
     });
   },80);
+}
+
+function updateNpcBoats(){
+  // Clear any existing timers first
+  npcBoats.forEach(boat => {
+    if(boat.fishingTimer) {
+      clearTimeout(boat.fishingTimer);
+      boat.fishingTimer = null;
+      boat.fishing = false;
+    }
+  });
+  
+  npcBoats.forEach(boat => {
+    // Move the boat
+    boat.x += boat.dir * boat.speed;
+    
+    // Wrap around screen edges
+    if(boat.x > canvas.width + 50) boat.x = -50;
+    if(boat.x < -50) boat.x = canvas.width + 50;
+    
+    // Randomly change direction occasionally
+    if(Math.random() < 0.02) boat.dir *= -1;
+    
+    // Fishing logic
+    if(!boat.fishing && Math.random() < 0.1){ // 10% chance to start fishing each tick
+      boat.fishing = true;
+      boat.fishingTimer = setTimeout(() => {
+        boat.fishing = false;
+        boat.fishingTimer = null;
+        // Simulate catching a fish (reduce eco slightly)
+        G.eco = Math.max(0, G.eco - 0.1);
+      }, 5000 + Math.random() * 10000); // Fish for 5-15 seconds
+    }
+  });
 }
 
 function updateHUD(){
@@ -4446,6 +4509,10 @@ async function loadSlot(slot){
   if(G.tickTimer)clearInterval(G.tickTimer);
   if(G.fishTimer)clearTimeout(G.fishTimer);
   if(G.stormTimer)clearTimeout(G.stormTimer);
+  // Clear NPC boat timers
+  npcBoats.forEach(boat => {
+    if(boat.fishingTimer) clearTimeout(boat.fishingTimer);
+  });
   startGame(restoreRefs(sd));
   logMsg('Partida cargada: Dia '+sd.day,'success');
 }
