@@ -1154,9 +1154,9 @@ function initNpcBoats(){
   for(let i = 0; i < 3; i++){
     npcBoats.push({
       x: Math.random() * canvas.width * 0.8 + canvas.width * 0.1, // Random position across the sea
-      y: canvas.height * (0.45 + Math.random() * 0.1), // Around the water level
+      y: canvas.height * (0.40 + Math.random() * 0.06), // Higher and more distant on the water
       dir: Math.random() > 0.5 ? 1 : -1, // Random direction
-      speed: 0.2 + Math.random() * 0.3, // Slow movement
+      speed: 0.15 + Math.random() * 0.25, // Even slower movement
       fishing: false,
       fishingTimer: null,
       bob: Math.random() * Math.PI * 2 // For bobbing animation
@@ -2711,19 +2711,19 @@ function renderLoop(){
 
   // ── LAYER 5: BOAT (behind structures) ──
   if(boatX>W*0.54) boatX=W*0.22;
-  drawBoat(boatX,boatY);
   
-  // Draw NPC boats
+  // Draw NPC boats first so they appear more distant in the scene
   npcBoats.forEach(boat => {
-    drawBoat(boat.x, boat.y);
+    drawBoat(boat.x, boat.y, PS * 0.65, {opacity: 0.8});
     // Draw fishing line if fishing
     if(boat.fishing){
-      const lx = boat.x + 14, ly = boat.y + 26 + Math.sin(wt*3)*8;
-      ctx.strokeStyle='rgba(255,255,200,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.moveTo(boat.x+20, boat.y-8); ctx.lineTo(lx, ly+30); ctx.stroke(); ctx.setLineDash([]);
-      px(lx-3, ly+30, 8, 5, '#e74c3c'); px(lx-1, ly+30, 4, 2, '#fff');
+      const lx = boat.x + 14 * 0.65, ly = boat.y + 26 * 0.65 + Math.sin(wt*3)*8*0.65;
+      ctx.strokeStyle='rgba(255,255,200,.4)'; ctx.lineWidth=1 * 0.65; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(boat.x+20*0.65, boat.y-8*0.65); ctx.lineTo(lx, ly+30*0.65); ctx.stroke(); ctx.setLineDash([]);
+      px(lx-3*0.65, ly+30*0.65, 8*0.65, 5*0.65, '#e74c3c'); px(lx-1*0.65, ly+30*0.65, 4*0.65, 2*0.65, '#fff');
     }
   });
+  drawBoat(boatX,boatY);
 
   // ── LAYER 6: VILLAGE (ground + dock + buildings = TOP LAYER) ──
   drawVillage(W,H);
@@ -2774,9 +2774,10 @@ function drawZoneDeco(W,H){
   }
 }
 
-function drawBoat(bx,by){
+function drawBoat(bx,by,scale=PS,options={}){
   ctx.save();
-  const S=PS; // scale
+  const S=scale; // scale
+  if(options.opacity!=null) ctx.globalAlpha = options.opacity;
   const bob=Math.sin(wt*1.1)*(G.storm?9:3)*S;
   const tilt=Math.sin(wt*.7)*(G.storm?.07:.02);
   ctx.translate(bx,by+bob); ctx.rotate(tilt);
