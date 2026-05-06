@@ -1579,7 +1579,7 @@ function drawVillage(W,H){
     const lb=isPortrait?W*0.04:W*0.56, rb=isPortrait?W*0.96:W*0.92;
     if(v.px>rb)v.dir=-1; if(v.px<lb)v.dir=1;
     const vy=H*v.yR+Math.sin(wt*2.5+v.px*0.02)*1;
-    drawVillager(v.px,vy,v.type,v.dir>0);
+    drawVillager(v.px,vy,v.type,v.dir>0,1.2);
   }
 
   // Night lamp glow
@@ -2374,9 +2374,9 @@ function drawPalm(x,GY,W,H){
   ctx.lineWidth=1;
 }
 
-function drawVillager(x,y,type,faceR){
+function drawVillager(x,y,type,faceR,scale=1){
   const f=faceR?1:-1;
-  ctx.save(); ctx.translate(Math.round(x),Math.round(y)); ctx.scale(f,1);
+  ctx.save(); ctx.translate(Math.round(x),Math.round(y)); ctx.scale(f*scale,scale);
   const walk=Math.sin(wt*4+x*.03)*.8;
   // Shoes
   const shoeC={fisherman:'#3a2810',scientist:'#1a1a2a',elder:'#2a2010',boy:'#2a1a10'}[type]||'#2a1a10';
