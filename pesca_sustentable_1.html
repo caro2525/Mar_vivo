@@ -706,7 +706,7 @@
           <div class="bar-bg"><div class="bar-fill eco" id="bar-eco" style="width:80%"></div></div>
           <span id="eco-pct" style="font-size:clamp(4px,.7vw,6px);color:var(--green);margin-left:3px;min-width:22px">80%</span>
         </div>
-        <div id="eco-warning" style="color:var(--red);font-size:clamp(3.5px,.7vw,5.5px);display:none;text-align:right">SOBREPESCA!</div>
+        <div id="eco-warning" style="color:var(--red);font-size:clamp(3.5px,.7vw,5.5px);display:none;text-align:right"></div>
       </div>
     </div>
   </div>
@@ -1613,7 +1613,7 @@ function drawVillage(W,H){
     const lb=isPortrait?W*0.04:W*0.56, rb=isPortrait?W*0.96:W*0.92;
     if(v.px>rb)v.dir=-1; if(v.px<lb)v.dir=1;
     const vy=H*v.yR+Math.sin(wt*2.5+v.px*0.02)*1;
-    drawVillager(v.px,vy,v.type,v.dir>0,1.3);
+    drawVillager(v.px,vy,v.type,v.dir>0,1.3,v.variant);
   }
 
   // Night lamp glow
@@ -2408,21 +2408,23 @@ function drawPalm(x,GY,W,H){
   ctx.lineWidth=1;
 }
 
-function drawVillager(x,y,type,faceR,scale=1){
+function drawVillager(x,y,type,faceR,scale=1,variant=0){
   const f=faceR?1:-1;
   ctx.save(); ctx.translate(Math.round(x),Math.round(y)); ctx.scale(f*scale,scale);
   const walk=Math.sin(wt*4+x*.03)*.8;
+  const style=getVillagerStyle(type,variant);
   // Shoes
-  const shoeC={fisherman:'#3a2810',scientist:'#1a1a2a',elder:'#2a2010',boy:'#2a1a10'}[type]||'#2a1a10';
+  const shoeC=style.shoes||{fisherman:'#3a2810',scientist:'#1a1a2a',elder:'#2a2010',boy:'#2a1a10'}[type]||'#2a1a10';
   px(-5,18,5,4,shoeC); px(0,18+walk*1.5,5,4,shoeC);
   // Legs
-  const legC={fisherman:'#1a4a80',scientist:'#303030',elder:'#604020',boy:'#203060'}[type]||'#303050';
+  const legC=style.pants||{fisherman:'#1a4a80',scientist:'#303030',elder:'#604020',boy:'#203060'}[type]||'#303050';
   px(-4,8+walk*2,4,12,legC); px(0,8-walk*2,4,12,legC);
   // Body
-  const bodyC={fisherman:'#c89040',scientist:'#3050a0',elder:'#7a5830',boy:'#b03030'}[type]||'#505080';
+  const bodyC=style.body||{fisherman:'#c89040',scientist:'#3050a0',elder:'#7a5830',boy:'#b03030'}[type]||'#505080';
   px(-7,-5,14,15,bodyC);
   // Collar/detail
-  px(-7,-5,3,4,shade(bodyC,15)); px(4,-5,3,4,shade(bodyC,15));
+  const accentC=style.accent||shade(bodyC,15);
+  px(-7,-5,3,4,accentC); px(4,-5,3,4,accentC);
   // Arms
   px(-11,-3+walk*2,5,11,bodyC); px(6,-3-walk*2,5,11,bodyC);
   // Hands
@@ -2454,20 +2456,20 @@ function drawVillager(x,y,type,faceR,scale=1){
     px(-5,-16,3,2,'#404040'); px(1,-16,3,2,'#404040'); px(-2,-15,2,1,'#404040');
     px(7,0,8,10,style.backpack||'#f0d080'); px(8,1,6,8,shade(style.backpack||'#f0d080',-15));
   } else if(type==='elder'){
-    // Grey hair
-    px(-5,-26,10,8,'#c0c0c0');
+    // Hair
+    px(-5,-26,10,8,style.hair||'#c0c0c0');
     // Shawl
-    px(-8,-2,16,5,shade('#7a5830',-20));
+    px(-8,-2,16,5,style.shawl||shade('#7a5830',-20));
     // Cane
     ctx.strokeStyle='#8B6010'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(-8,18); ctx.lineTo(-10,-5); ctx.stroke();
     px(-14,-7,6,4,'#8B6010');
   } else if(type==='boy'){
     // Spiky hair
-    px(-5,-24,10,6,'#402010');
-    for(let i=0;i<4;i++) px(-4+i*3,-28,2,6,shade('#402010',i*5));
+    px(-5,-24,10,6,style.hair||'#402010');
+    for(let i=0;i<4;i++) px(-4+i*3,-28,2,6,shade(style.hair||'#402010',i*5));
     // Backpack
-    px(6,-4,8,12,'#3060a0'); px(7,-3,6,10,shade('#3060a0',15));
+    px(6,-4,8,12,style.backpack||'#3060a0'); px(7,-3,6,10,shade(style.backpack||'#3060a0',15));
   }
   ctx.restore();
 }
@@ -3742,6 +3744,15 @@ function updateHUD(){
   const eb=document.getElementById('bar-eco');
   eb.style.background=G.eco<30?'#e74c3c':G.eco<60?'linear-gradient(90deg,#e67e22,#f1c40f)':'linear-gradient(90deg,#e74c3c,#27ae60)';
   const ecoPct=document.getElementById('eco-pct'); if(ecoPct) ecoPct.textContent=Math.round(G.eco)+'%'; ecoPct&&(ecoPct.style.color=G.eco<30?'#e74c3c':G.eco<60?'#f1c40f':'#27ae60');
+  const ecoWarn=document.getElementById('eco-warning');
+  if(ecoWarn){
+    if(G.eco<=40){
+      ecoWarn.textContent='Advertencia: Los científicos consultores señalan que el equilibrio natural ha disminuido al 40%. La flora y fauna comienza a verse afectadas, tomas accines pronto para recuperar el ecosistema.';
+      ecoWarn.style.display='block';
+    } else {
+      ecoWarn.style.display='none';
+    }
+  }
 }
 
 function logMsg(t,tp=''){
