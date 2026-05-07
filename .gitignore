@@ -6,6 +6,7 @@ config.txt
 
 # Firebase config
 firebaseConfig.js
+serviceAccount.json
 
 # OS files
 .DS_Store
@@ -46,3 +47,6 @@ server.pid
 *.temp
 .DS_Store
 Thumbs.db
+
+
+secrets.toml

@@ -1154,6 +1154,7 @@ let wt=0;
 let boatX,boatY;
 let waves=[],particles=[],fishEntities=[],seaBirds=[],npcBoats=[];
 let tc=null,tcx=null,tw=0,th=0,tt=0;
+let townSprite=null;
 
 function initBirds(){
   seaBirds=[];
@@ -1242,11 +1243,21 @@ function initNpcBoats(){
   }
 }
 
-function initCanvas(){
+function loadTownSprite(){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{townSprite=img; resolve();};
+    img.onerror=()=>{console.error('Failed to load town sprite'); resolve();};
+    img.src='sprites/town/town_day_sprt.png';
+  });
+}
+
+async function initCanvas(){
   canvas.width=window.innerWidth; canvas.height=window.innerHeight;
   // Scale pixel art to screen - bigger pixels on small screens for crisp look
   PS=Math.max(1,Math.min(2.5,window.innerWidth/560));
   boatX=canvas.width*.28; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
+  await loadTownSprite();
   initWaves(); initFishEntities(); initBirds(); initNpcBoats();
   villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
   renderLoop();
@@ -2803,8 +2814,20 @@ function renderLoop(){
   });
   drawBoat(boatX,boatY);
 
-  // ── LAYER 6: VILLAGE (ground + dock + buildings = TOP LAYER) ──
-  drawVillage(W,H);
+  // ── LAYER 6: VILLAGE (sprite + villagers) ──
+  if(townSprite){
+    ctx.drawImage(townSprite, 0, 0, W, H);
+  }
+
+  // ── VILLAGERS (roam in village area) ──
+  const isPortrait = H > W;
+  for(const v of villagers){
+    v.px+=v.dir*v.speed;
+    const lb=isPortrait?W*0.04:W*0.56, rb=isPortrait?W*0.96:W*0.92;
+    if(v.px>rb)v.dir=-1; if(v.px<lb)v.dir=1;
+    const vy=H*v.yR+Math.sin(wt*2.5+v.px*0.02)*1;
+    drawVillager(v.px,vy,v.type,v.dir>0,1.3,v.variant);
+  }
 
   // Fishing line
   if(G.fishing){
@@ -4620,11 +4643,12 @@ window.addEventListener('resize',()=>{
   checkOrientation();
 });
 
+(async ()=>{
 try{
   console.log('[INIT] Starting game initialization...');
   initDOMCache();
   console.log('[INIT] ✓ DOM cache initialized');
-  initCanvas();
+  await initCanvas();
   console.log('[INIT] ✓ Canvas initialized');
   initTitleCanvas();
   console.log('[INIT] ✓ Title canvas initialized - Game ready!');
@@ -4632,6 +4656,7 @@ try{
   console.error('[INIT ERROR]', e.message, e);
   console.error('[STACK]', e.stack);
 }
+})();
 </script>
 </body>
 </html>
