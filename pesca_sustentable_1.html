@@ -967,9 +967,39 @@ const G={
 };
 
 // ─── LOGGER MODULE ─────────────────────────────────────────
+function getEcosystemStatus(){
+  const zone=G.zone;
+  const pool=SPECIES[zone]||SPECIES.manglar;
+  const pops=G.populations?.[zone]||{};
+
+  let totalPop=0;
+  let weightedEco=0;
+
+  pool.forEach(sp=>{
+    const pop=Math.max(0,pops[sp.name]||0);
+    totalPop+=pop;
+    weightedEco+=(sp.eco||1)*pop;
+  });
+
+  const maxPossible=pool.length*60;
+  const healthRatio=maxPossible>0?totalPop/maxPossible:1;
+
+  return {
+    ecoValue: G.eco,
+    currentZone: zone,
+    totalPopulation: totalPop,
+    maxPopulation: maxPossible,
+    healthRatio: Math.round(healthRatio*100),
+    weightedEcoScore: totalPop>0?Math.round(weightedEco/totalPop):0,
+    ecosystemStatus: G.eco>=70?'healthy':G.eco>=40?'warning':'critical',
+    populationStatus: healthRatio>=0.7?'thriving':healthRatio>=0.4?'stable':'depleted'
+  };
+}
+
 const Logger={
   log(type,details){
     if(!G.playerCode||!window._fbDb) return;
+    const ecosystemStatus=getEcosystemStatus();
     const entry={
       participantCode:G.playerCode,
       sessionId:G.sessionId,
@@ -977,10 +1007,24 @@ const Logger={
       localTime:new Date().toISOString(),
       gameDay:G.day,
       gameHour:G.hour,
+      gameState:{
+        money:G.money,
+        fuel:G.fuel,
+        energy:G.energy,
+        hunger:G.hunger,
+        thirst:G.thirst,
+        caught:G.caught
+      },
+      ecosystem:ecosystemStatus,
       type,
       details
     };
-    window._fbAdd(entry).catch(()=>{});
+    window._fbAdd(entry).catch(error=>{
+      console.error('[Firestore Error]',error.message,{
+        participantCode:entry.participantCode,
+        type:entry.type
+      });
+    });
   }
 };
 
