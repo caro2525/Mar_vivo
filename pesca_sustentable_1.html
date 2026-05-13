@@ -1227,6 +1227,39 @@ function getVillagerStyle(type,variant){
 }
 
 let villagers=[];
+let villagerSprite=null;
+let spriteSheetDims={cols:12,rows:4};
+let spriteDims={w:0,h:0};
+
+const TYPE_TO_ROW={fisherman:0,scientist:1,elder:2,boy:3};
+const DIR_TO_COL={0:0,1:1,-1:2}; // 0:front, 1:right(dir>0), -1:left(dir<0)
+
+function loadVillagerSprites(){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{
+      villagerSprite=img;
+      spriteDims.w=img.width/spriteSheetDims.cols;
+      spriteDims.h=img.height/spriteSheetDims.rows;
+      console.log(`[Sprites] Loaded villager sheet ${img.width}x${img.height}, sprite size: ${spriteDims.w}x${spriteDims.h}`);
+      resolve();
+    };
+    img.onerror=()=>{console.error('Failed to load villager sprite sheet'); resolve();};
+    img.src='sprites/people_sprt.png';
+  });
+}
+
+function getVillagerSpriteCoords(type,variant,dir){
+  const row=TYPE_TO_ROW[type]||0;
+  const dirCol=DIR_TO_COL[dir]||0;
+  const baseCol=(variant*4)+dirCol;
+  return{
+    sx:baseCol*spriteDims.w,
+    sy:row*spriteDims.h,
+    sw:spriteDims.w,
+    sh:spriteDims.h
+  };
+}
 
 function initNpcBoats(){
   npcBoats = [];
@@ -1258,6 +1291,7 @@ async function initCanvas(){
   PS=Math.max(1,Math.min(2.5,window.innerWidth/560));
   boatX=canvas.width*.28; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
   await loadTownSprite();
+  await loadVillagerSprites();
   initWaves(); initFishEntities(); initBirds(); initNpcBoats();
   villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
   renderLoop();
@@ -2464,68 +2498,24 @@ function drawPalm(x,GY,W,H){
 }
 
 function drawVillager(x,y,type,faceR,scale=1,variant=0){
+  if(!villagerSprite || spriteDims.w===0) return;
+
   const f=faceR?1:-1;
-  ctx.save(); ctx.translate(Math.round(x),Math.round(y)); ctx.scale(f*scale,scale);
-  const walk=Math.sin(wt*4+x*.03)*.8;
-  const style=getVillagerStyle(type,variant);
-  // Shoes
-  const shoeC=style.shoes||{fisherman:'#3a2810',scientist:'#1a1a2a',elder:'#2a2010',boy:'#2a1a10'}[type]||'#2a1a10';
-  px(-5,18,5,4,shoeC); px(0,18+walk*1.5,5,4,shoeC);
-  // Legs
-  const legC=style.pants||{fisherman:'#1a4a80',scientist:'#303030',elder:'#604020',boy:'#203060'}[type]||'#303050';
-  px(-4,8+walk*2,4,12,legC); px(0,8-walk*2,4,12,legC);
-  // Body
-  const bodyC=style.body||{fisherman:'#c89040',scientist:'#3050a0',elder:'#7a5830',boy:'#b03030'}[type]||'#505080';
-  px(-7,-5,14,15,bodyC);
-  // Collar/detail
-  const accentC=style.accent||shade(bodyC,15);
-  px(-7,-5,3,4,accentC); px(4,-5,3,4,accentC);
-  // Arms
-  px(-11,-3+walk*2,5,11,bodyC); px(6,-3-walk*2,5,11,bodyC);
-  // Hands
-  const skinC=['#e0b080','#c89060','#d4a070','#b87840'][Math.floor((x*.01+y*.01))%4];
-  px(-12,8+walk*2,5,4,skinC); px(7,8-walk*2,5,4,skinC);
-  // Neck
-  px(-2,-8,4,4,skinC);
-  // Head
-  px(-5,-20,10,13,skinC);
-  px(-5,-21,10,2,shade(skinC,-10));
-  // Eyes
-  px(-3,-15,2,2,'#2a1a0a'); px(1,-15,2,2,'#2a1a0a');
-  px(-3,-15,1,1,'rgba(255,255,255,.4)');
-  // Mouth
-  px(-2,-11,4,1,shade(skinC,-20));
-  // Type-specific
-  if(type==='fisherman'){
-    const hatC=style.hat||'#c89040';
-    px(-7,-28,14,8,hatC); px(-5,-34,10,8,hatC); px(-9,-22,18,4,shade(hatC,-15));
-    ctx.strokeStyle=style.rod||'#7d4a14'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(20,-18); ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,200,.55)'; ctx.lineWidth=1; ctx.setLineDash([2,2]);
-    ctx.beginPath(); ctx.moveTo(20,-18); ctx.lineTo(24+Math.sin(wt*1.5)*5,5); ctx.stroke();
-    ctx.setLineDash([]);
-  } else if(type==='scientist'){
-    const coatC=style.coat||'#e8e8e8';
-    px(-7,-5,3,10,coatC); px(4,-5,3,10,coatC);
-    px(-7,-5,8,10,shade(coatC,-10)); px(4,-5,8,10,shade(coatC,-10));
-    px(-5,-16,3,2,'#404040'); px(1,-16,3,2,'#404040'); px(-2,-15,2,1,'#404040');
-    px(7,0,8,10,style.backpack||'#f0d080'); px(8,1,6,8,shade(style.backpack||'#f0d080',-15));
-  } else if(type==='elder'){
-    // Hair
-    px(-5,-26,10,8,style.hair||'#c0c0c0');
-    // Shawl
-    px(-8,-2,16,5,style.shawl||shade('#7a5830',-20));
-    // Cane
-    ctx.strokeStyle='#8B6010'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(-8,18); ctx.lineTo(-10,-5); ctx.stroke();
-    px(-14,-7,6,4,'#8B6010');
-  } else if(type==='boy'){
-    // Spiky hair
-    px(-5,-24,10,6,style.hair||'#402010');
-    for(let i=0;i<4;i++) px(-4+i*3,-28,2,6,shade(style.hair||'#402010',i*5));
-    // Backpack
-    px(6,-4,8,12,style.backpack||'#3060a0'); px(7,-3,6,10,shade(style.backpack||'#3060a0',15));
+  const dir=faceR?1:-1;
+  const coords=getVillagerSpriteCoords(type,variant,dir);
+
+  const dw=spriteDims.w*scale;
+  const dh=spriteDims.h*scale;
+  const dx=Math.round(x-dw/2);
+  const dy=Math.round(y-dh);
+
+  ctx.save();
+  if(f<0){
+    ctx.translate(Math.round(x),Math.round(y));
+    ctx.scale(-1,1);
+    ctx.translate(-dw/2,-dh);
   }
+  ctx.drawImage(villagerSprite,coords.sx,coords.sy,coords.sw,coords.sh,dx,dy,dw,dh);
   ctx.restore();
 }
 
