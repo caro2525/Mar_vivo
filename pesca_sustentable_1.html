@@ -1155,6 +1155,12 @@ let boatX,boatY;
 let waves=[],particles=[],fishEntities=[],seaBirds=[],npcBoats=[];
 let tc=null,tcx=null,tw=0,th=0,tt=0;
 
+const BOAT_IMG = new Image();
+let BOAT_IMG_LOADED = false;
+BOAT_IMG.onload = () => { BOAT_IMG_LOADED = true; };
+BOAT_IMG.onerror = () => { console.warn('[Boat] No se pudo cargar sprite/boat.png. Usando dibujo por canvas.'); };
+BOAT_IMG.src = 'sprite/boat.png';
+
 function initBirds(){
   seaBirds=[];
   // Pelicans – slow, big, glide low over water
@@ -2853,8 +2859,24 @@ function drawZoneDeco(W,H){
 }
 
 function drawBoat(bx,by,scale=PS,options={}){
+  const S = scale * (options.imageScale ?? 1);
+  if(BOAT_IMG_LOADED){
+    ctx.save();
+    if(options.opacity!=null) ctx.globalAlpha = options.opacity;
+    const bob = Math.sin(wt*1.1)*(G.storm?9:3)*S;
+    const tilt = Math.sin(wt*.7)*(G.storm?.07:.02);
+    ctx.translate(bx,by+bob);
+    ctx.rotate(tilt);
+    const imgW = BOAT_IMG.width;
+    const imgH = BOAT_IMG.height;
+    const targetW = imgW * S;
+    const targetH = imgH * S;
+    ctx.drawImage(BOAT_IMG, -targetW/2, -targetH/2, targetW, targetH);
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
-  const S=scale; // scale
   if(options.opacity!=null) ctx.globalAlpha = options.opacity;
   const bob=Math.sin(wt*1.1)*(G.storm?9:3)*S;
   const tilt=Math.sin(wt*.7)*(G.storm?.07:.02);
