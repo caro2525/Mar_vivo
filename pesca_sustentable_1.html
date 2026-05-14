@@ -43,7 +43,7 @@
     user-select:none;
   }
   body{
-    background: url('Day.png') center center / cover no-repeat fixed;
+    background:var(--ocean-deep);
     font-family:var(--font-pixel);
     color:var(--white);
   }
@@ -3796,6 +3796,21 @@ function updateHUD(){
     } else {
       ecoWarn.style.display='none';
     }
+  }
+  updateBodyBackground();
+}
+
+function updateBodyBackground(){
+  const isDay = G.hour>=6 && G.hour<20;
+  if(isDay){
+    document.body.style.backgroundImage = "url('Day.png')";
+    document.body.style.backgroundPosition = 'center center';
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundRepeat = 'no-repeat';
+    document.body.style.backgroundAttachment = 'fixed';
+  } else {
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundColor = 'var(--ocean-deep)';
   }
 }
 
