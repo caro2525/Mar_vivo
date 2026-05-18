@@ -1157,6 +1157,8 @@ let tc=null,tcx=null,tw=0,th=0,tt=0;
 
 const BOAT_IMG = new Image();
 BOAT_IMG.src = 'sprite/Boat.png';
+const LIGHTHOUSE_IMG = new Image();
+LIGHTHOUSE_IMG.src = 'sprite/Lighthouse.png';
 
 function initBirds(){
   seaBirds=[];
@@ -2333,24 +2335,33 @@ function drawRepairShop(x,GY,W,BU){
 
 
 function drawLighthouse(x,GY,W,H,BU){
-  const w=Math.round(BU*2), h=Math.round(BU*2);
-  px(x+2,GY-h,w-4,h,'#c0c0a8'); px(x+w-Math.round(BU*.55),GY-h,Math.round(BU*.55),h,shade('#c0c0a8',-16));
-  for(let b=0;b<3;b++) px(x+2,GY-h+b*Math.round(h/3),w-4,1,shade('#c0c0a8',-8));
-  px(x+Math.round(w*.35),GY-Math.round(BU*1.2),Math.round(BU*.6),Math.round(BU*1.2),'#5a3010');
-  ctx.fillStyle=shade('#5a3010',18); ctx.beginPath(); ctx.arc(x+Math.round(w*.35+BU*.3),GY-Math.round(BU*1.2),Math.round(BU*.3),Math.PI,0); ctx.fill();
-  px(x+Math.round(w*.2),GY-3,Math.round(w*.6),3,'#b0b098');
-  const stripeH=Math.round(BU*.6), stripes=7;
-  for(let i=0;i<stripes;i++) px(x+Math.round(BU*.3)+Math.floor(i*.4),GY-h-i*stripeH,w-Math.round(BU*.6)-Math.floor(i*.8),stripeH,i%2===0?'#e8e8cc':'#e04030');
-  const top=GY-h-stripes*stripeH;
-  px(x+2,top,w-4,5,'#c0c0a8'); px(x,top+2,w,3,'rgba(255,255,255,.2)');
-  for(let r=0;r<4;r++) px(x+Math.round(BU*.25)+r*Math.round(BU*.45),top,Math.round(BU*.3),7,'#d0d0b8');
-  const lrW=w-Math.round(BU*.7), lrH=Math.round(BU*1);
-  px(x+Math.round(BU*.35),top-lrH,lrW,lrH,'#3060a0'); px(x+Math.round(BU*.28),top-lrH-3,lrW+Math.round(BU*.14),4,'#c0c0a8');
-  for(let g=0;g<3;g++) px(x+Math.round(BU*.42)+g*Math.round(BU*.42),top-lrH+2,Math.round(BU*.32),lrH-4,'rgba(200,230,255,.3)');
-  ctx.fillStyle='#c0c0a8'; ctx.beginPath(); ctx.moveTo(x+4,top-lrH); ctx.lineTo(x+w*.5,top-lrH-BU); ctx.lineTo(x+w-4,top-lrH); ctx.closePath(); ctx.fill();
-  px(x+Math.round(w*.5-2),top-lrH-BU-2,4,4,'#f0f0e0');
+  const w=Math.round(BU*2);
+  const h=Math.round(w * 1024 / 1536);
+  const top = GY - h;
+  if (LIGHTHOUSE_IMG.complete && LIGHTHOUSE_IMG.naturalWidth > 0) {
+    ctx.drawImage(LIGHTHOUSE_IMG, x, top, w, h);
+  } else {
+    const fullH=Math.round(BU*2);
+    const topAlt=GY-fullH;
+    px(x+2,topAlt,w-4,fullH,'#c0c0a8'); px(x+w-Math.round(BU*.55),topAlt,Math.round(BU*.55),fullH,shade('#c0c0a8',-16));
+    for(let b=0;b<3;b++) px(x+2,topAlt+b*Math.round(fullH/3),w-4,1,shade('#c0c0a8',-8));
+    px(x+Math.round(w*.35),GY-Math.round(BU*1.2),Math.round(BU*.6),Math.round(BU*1.2),'#5a3010');
+    ctx.fillStyle=shade('#5a3010',18); ctx.beginPath(); ctx.arc(x+Math.round(w*.35+BU*.3),GY-Math.round(BU*1.2),Math.round(BU*.3),Math.PI,0); ctx.fill();
+    px(x+Math.round(w*.2),GY-3,Math.round(w*.6),3,'#b0b098');
+    const stripeH=Math.round(BU*.6), stripes=7;
+    for(let i=0;i<stripes;i++) px(x+Math.round(BU*.3)+Math.floor(i*.4),topAlt-i*stripeH,w-Math.round(BU*.6)-Math.floor(i*.8),stripeH,i%2===0?'#e8e8cc':'#e04030');
+    const top2=topAlt-stripes*stripeH;
+    px(x+2,top2,w-4,5,'#c0c0a8'); px(x,top2+2,w,3,'rgba(255,255,255,.2)');
+    for(let r=0;r<4;r++) px(x+Math.round(BU*.25)+r*Math.round(BU*.45),top2,Math.round(BU*.3),7,'#d0d0b8');
+    const lrW=w-Math.round(BU*.7), lrH=Math.round(BU*1);
+    px(x+Math.round(BU*.35),top2-lrH,lrW,lrH,'#3060a0'); px(x+Math.round(BU*.28),top2-lrH-3,lrW+Math.round(BU*.14),4,'#c0c0a8');
+    for(let g=0;g<3;g++) px(x+Math.round(BU*.42)+g*Math.round(BU*.42),top2-lrH+2,Math.round(BU*.32),lrH-4,'rgba(200,230,255,.3)');
+    ctx.fillStyle='#c0c0a8'; ctx.beginPath(); ctx.moveTo(x+4,top2-lrH); ctx.lineTo(x+w*.5,top2-lrH-BU); ctx.lineTo(x+w-4,top2-lrH); ctx.closePath(); ctx.fill();
+    px(x+Math.round(w*.5-2),top2-lrH-BU-2,4,4,'#f0f0e0');
+  }
+
   if(G.hour>19||G.hour<6){
-    const ang=wt*.6, cx2=x+w*.5, cy2=top-lrH+4;
+    const ang=wt*.6, cx2=x+w*.5, cy2=top + Math.round(h * 0.1);
     ctx.save(); ctx.globalAlpha=.08; ctx.fillStyle='#ffffd0';
     ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang)*200,cy2+Math.sin(ang)*70); ctx.lineTo(cx2+Math.cos(ang+.4)*200,cy2+Math.sin(ang+.4)*70); ctx.closePath(); ctx.fill();
     ctx.globalAlpha=.07; ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang+Math.PI)*200,cy2+Math.sin(ang+Math.PI)*70); ctx.lineTo(cx2+Math.cos(ang+Math.PI+.4)*200,cy2+Math.sin(ang+Math.PI+.4)*70); ctx.closePath(); ctx.fill();
