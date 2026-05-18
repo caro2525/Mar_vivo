@@ -1155,6 +1155,9 @@ let boatX,boatY;
 let waves=[],particles=[],fishEntities=[],seaBirds=[],npcBoats=[];
 let tc=null,tcx=null,tw=0,th=0,tt=0;
 
+const BOAT_IMG = new Image();
+BOAT_IMG.src = 'sprite/Boat.png';
+
 function initBirds(){
   seaBirds=[];
   // Pelicans – slow, big, glide low over water
@@ -2854,10 +2857,23 @@ function drawZoneDeco(W,H){
 
 function drawBoat(bx,by,scale=PS,options={}){
   const S = scale * (options.imageScale ?? 1);
-  ctx.save();
-  if(options.opacity!=null) ctx.globalAlpha = options.opacity;
   const bob=Math.sin(wt*1.1)*(G.storm?9:3)*S;
   const tilt=Math.sin(wt*.7)*(G.storm?.07:.02);
+  const width = (options.width ?? 120) * S;
+  const height = (options.height ?? 80) * S;
+
+  if (BOAT_IMG.complete && BOAT_IMG.naturalWidth > 0) {
+    ctx.save();
+    if(options.opacity!=null) ctx.globalAlpha = options.opacity;
+    ctx.translate(bx,by+bob);
+    ctx.rotate(tilt);
+    ctx.drawImage(BOAT_IMG, -width/2, -height/2, width, height);
+    ctx.restore();
+    return;
+  }
+
+  ctx.save();
+  if(options.opacity!=null) ctx.globalAlpha = options.opacity;
   ctx.translate(bx,by+bob); ctx.rotate(tilt);
 
   // Wake ripples
