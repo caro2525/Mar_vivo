@@ -2336,8 +2336,12 @@ function drawRepairShop(x,GY,W,BU){
 
 function drawLighthouse(x,GY,W,H,BU){
   const baseW = Math.round(BU*2);
-  const w = Math.round(BU*3); // increase lighthouse sprite size
-  const h = Math.round(w * 1024 / 1536);
+  let w = Math.round(BU*3); // default width before image loads
+  let h = Math.round(w * 1024 / 1536);
+  if (LIGHTHOUSE_IMG.complete && LIGHTHOUSE_IMG.naturalWidth > 0) {
+    w = LIGHTHOUSE_IMG.naturalWidth;
+    h = LIGHTHOUSE_IMG.naturalHeight;
+  }
   const x0 = x - Math.round((w - baseW) / 2);
   const top = GY - h;
   if (LIGHTHOUSE_IMG.complete && LIGHTHOUSE_IMG.naturalWidth > 0) {
