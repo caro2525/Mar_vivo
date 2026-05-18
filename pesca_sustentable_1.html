@@ -2344,12 +2344,12 @@ function drawLighthouse(x,GY,W,H,BU){
     h = Math.round(LIGHTHOUSE_IMG.naturalHeight * scale);
   }
   const x0 = x - Math.round((w - baseW) / 2);
-  const top = GY - h + Math.round(BU * 0.18);
+  const top = GY - h + Math.round(BU * 0.60);
   if (LIGHTHOUSE_IMG.complete && LIGHTHOUSE_IMG.naturalWidth > 0) {
     ctx.drawImage(LIGHTHOUSE_IMG, x0, top, w, h);
   } else {
     const fullH = h;
-    const topAlt = GY - fullH + Math.round(BU * 0.18);
+    const topAlt = GY - fullH + Math.round(BU * 0.60);
     px(x0+2,topAlt,w-4,fullH,'#c0c0a8'); px(x0+w-Math.round(BU*.55),topAlt,Math.round(BU*.55),fullH,shade('#c0c0a8',-16));
     for(let b=0;b<3;b++) px(x0+2,topAlt+b*Math.round(fullH/3),w-4,1,shade('#c0c0a8',-8));
     px(x0+Math.round(w*.35),GY-Math.round(BU*1.2),Math.round(BU*.6),Math.round(BU*1.2),'#5a3010');
