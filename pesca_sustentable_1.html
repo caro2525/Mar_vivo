@@ -1295,6 +1295,8 @@ const BOAT_IMG = new Image();
 BOAT_IMG.src = 'sprite/Boat.png';
 const LIGHTHOUSE_IMG = new Image();
 LIGHTHOUSE_IMG.src = 'sprite/Lighthouse.png';
+const SEAGULL_IMG = new Image();
+SEAGULL_IMG.src = 'sprite/Seagull (2).png';
 
 function initBirds(){
   seaBirds=[];
@@ -2737,34 +2739,35 @@ function drawBirds(W,H){
       const vx=Math.sin(b.veer)*8;
       const bx=Math.round(b.x+vx), by=Math.round(b.y+Math.sin(b.bob)*4);
       ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
-      const wf=b.soaring?0:Math.abs(Math.sin(b.wingPhase));
-      // Body
-      ctx.fillStyle='#f0eeea';
-      ctx.beginPath(); ctx.ellipse(0,0,b.size*1.1,b.size*.4,0,0,Math.PI*2); ctx.fill();
-      // Wings – M shape
-      ctx.strokeStyle='#d8d4cc'; ctx.lineWidth=b.size*.4; ctx.lineCap='round';
-      ctx.beginPath();
-      ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6));
-      ctx.lineTo(-b.size*.2,-b.size*.15);
-      ctx.lineTo(b.size*.2,-b.size*.15);
-      ctx.lineTo(b.size*1.6,-b.size*(0.5+wf*.6));
-      ctx.stroke();
-      // Wing tips
-      ctx.strokeStyle='#606058'; ctx.lineWidth=b.size*.3;
-      ctx.beginPath(); ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(-b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
-      // Head
-      ctx.fillStyle='#f8f8f5'; ctx.beginPath(); ctx.arc(-b.size*.9,0,b.size*.35,0,Math.PI*2); ctx.fill();
-      // Beak (short, yellow)
-      ctx.fillStyle='#d4a028';
-      ctx.beginPath(); ctx.moveTo(-b.size*1.2,-b.size*.06); ctx.lineTo(-b.size*1.65,-b.size*.06);
-      ctx.lineTo(-b.size*1.55,b.size*.06); ctx.lineTo(-b.size*1.15,b.size*.04); ctx.closePath(); ctx.fill();
-      ctx.fillStyle='#c03820';
-      ctx.beginPath(); ctx.ellipse(-b.size*1.5,b.size*.04,b.size*.08,b.size*.04,0,0,Math.PI*2); ctx.fill();
-      // Eye
-      ctx.fillStyle='#1a1810'; ctx.beginPath(); ctx.arc(-b.size*.82,-b.size*.05,b.size*.09,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-b.size*.79,-b.size*.07,b.size*.04,0,Math.PI*2); ctx.fill();
-      ctx.lineCap='butt'; ctx.lineWidth=1;
+      // Draw sprite if loaded
+      if(SEAGULL_IMG.complete && SEAGULL_IMG.naturalWidth>0){
+        const w=b.size*2.2, h=b.size*1.8;
+        ctx.drawImage(SEAGULL_IMG,-w/2,-h/2,w,h);
+      } else {
+        // Fallback to pixel art if image not loaded
+        const wf=b.soaring?0:Math.abs(Math.sin(b.wingPhase));
+        ctx.fillStyle='#f0eeea';
+        ctx.beginPath(); ctx.ellipse(0,0,b.size*1.1,b.size*.4,0,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='#d8d4cc'; ctx.lineWidth=b.size*.4; ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6));
+        ctx.lineTo(-b.size*.2,-b.size*.15);
+        ctx.lineTo(b.size*.2,-b.size*.15);
+        ctx.lineTo(b.size*1.6,-b.size*(0.5+wf*.6));
+        ctx.stroke();
+        ctx.strokeStyle='#606058'; ctx.lineWidth=b.size*.3;
+        ctx.beginPath(); ctx.moveTo(-b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(-b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
+        ctx.fillStyle='#f8f8f5'; ctx.beginPath(); ctx.arc(-b.size*.9,0,b.size*.35,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#d4a028';
+        ctx.beginPath(); ctx.moveTo(-b.size*1.2,-b.size*.06); ctx.lineTo(-b.size*1.65,-b.size*.06);
+        ctx.lineTo(-b.size*1.55,b.size*.06); ctx.lineTo(-b.size*1.15,b.size*.04); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#c03820';
+        ctx.beginPath(); ctx.ellipse(-b.size*1.5,b.size*.04,b.size*.08,b.size*.04,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1a1810'; ctx.beginPath(); ctx.arc(-b.size*.82,-b.size*.05,b.size*.09,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-b.size*.79,-b.size*.07,b.size*.04,0,Math.PI*2); ctx.fill();
+        ctx.lineCap='butt'; ctx.lineWidth=1;
+      }
     }
 
     else if(b.type==='sandpiper'){
