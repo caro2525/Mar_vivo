@@ -2741,7 +2741,7 @@ function drawBirds(W,H){
       ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
       // Draw sprite if loaded
       if(SEAGULL_IMG.complete && SEAGULL_IMG.naturalWidth>0){
-        const w=b.size*2.2, h=b.size*1.8;
+        const w=b.size*4.2, h=b.size*3.4;
         ctx.drawImage(SEAGULL_IMG,-w/2,-h/2,w,h);
       } else {
         // Fallback to pixel art if image not loaded
