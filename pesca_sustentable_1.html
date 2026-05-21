@@ -11,16 +11,27 @@
 <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 <script src="firebaseConfig.js"></script>
 <script>
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const actionsCollection = db.collection('actions');
-
-  // Expose to window for logging
-  window._fbDb = db;
-  window._fbAdd = (data) => actionsCollection.add(data);
-  window._fbTS = firebase.firestore.FieldValue.serverTimestamp;
-
-  console.log('[Firebase] Conectado a Firestore - proyecto: marvivo-8148d');
+  if(typeof firebase !== 'undefined' && typeof firebase.initializeApp === 'function'){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      const actionsCollection = db.collection('actions');
+      window._fbDb = db;
+      window._fbAdd = (data) => actionsCollection.add(data);
+      window._fbTS = firebase.firestore.FieldValue.serverTimestamp;
+      console.log('[Firebase] Conectado a Firestore - proyecto: marvivo-8148d');
+    } catch(e) {
+      console.warn('[Firebase] No se pudo inicializar Firebase. El juego continua sin registro remoto.', e);
+      window._fbDb = null;
+      window._fbAdd = async ()=>{};
+      window._fbTS = ()=>new Date();
+    }
+  } else {
+    console.warn('[Firebase] Firebase no cargó o no está disponible. El juego continua sin registro remoto.');
+    window._fbDb = null;
+    window._fbAdd = async ()=>{};
+    window._fbTS = ()=>new Date();
+  }
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
@@ -874,7 +885,13 @@ async function storageSave(key,value){
   try{
     const json=JSON.stringify(value);
     if(!json||json==='null'){console.warn('getState returned empty');return false;}
-    await window.storage.set(key,json);
+    if(window.storage && typeof window.storage.set === 'function'){
+      await window.storage.set(key,json);
+    } else if(window.localStorage){
+      window.localStorage.setItem(key,json);
+    } else {
+      throw new Error('No storage disponible');
+    }
     return true;
   }catch(e){
     console.warn('storageSave error:',e);
@@ -883,9 +900,27 @@ async function storageSave(key,value){
   }
 }
 async function storageLoad(key){
-  try{const r=await window.storage.get(key);return r?JSON.parse(r.value):null;}catch(e){return null;}
+  try{
+    if(window.storage && typeof window.storage.get === 'function'){
+      const r = await window.storage.get(key);
+      return r?JSON.parse(r.value):null;
+    }
+    if(window.localStorage){
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    }
+    return null;
+  }catch(e){return null;}
 }
-async function storageDelete(key){try{await window.storage.delete(key);}catch(e){}}
+async function storageDelete(key){
+  try{
+    if(window.storage && typeof window.storage.delete === 'function'){
+      await window.storage.delete(key);
+    } else if(window.localStorage){
+      window.localStorage.removeItem(key);
+    }
+  }catch(e){}
+}
 
 
 
