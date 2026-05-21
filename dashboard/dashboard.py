@@ -10,25 +10,35 @@ warnings.filterwarnings('ignore')
 
 st.set_page_config(page_title="Mar Vivo Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# ─── AUTHENTICATION ───
-if not st.user.is_logged_in:
-    st.title("🌊 Mar Vivo Dashboard")
-    st.info("Acceso restringido a investigadores autorizados.")
-    st.markdown("### Inicia sesión con tu cuenta de Google para acceder al dashboard")
-    st.button("Continuar con Google", on_click=st.login, args=("google",), use_container_width=True)
-    st.stop()
+# ─── AUTHENTICATION (Email/Password) ───
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = None
 
-# Verificar si el usuario está autorizado
-try:
-    authorized_emails = st.secrets.get("authorized_users", {}).get("emails", [])
-    if st.user.email not in authorized_emails:
-        st.error(f"❌ Acceso denegado")
-        st.markdown(f"Tu email **{st.user.email}** no tiene permiso para acceder a este dashboard.")
-        st.markdown("Contacta al administrador si crees que esto es un error.")
-        st.button("Cerrar sesión", on_click=st.logout, use_container_width=True)
-        st.stop()
-except Exception as e:
-    st.error(f"Error en autenticación: {e}")
+if not st.session_state.user_email:
+    st.title("🌊 Mar Vivo Dashboard")
+    st.info("Acceso restringido. Inicia sesión con tu email y contraseña.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Iniciar sesión")
+        login_email = st.text_input("Email", key="login_email", placeholder="tu@email.com")
+        login_password = st.text_input("Contraseña", type="password", key="login_password")
+
+        if st.button("Inicia sesión", use_container_width=True):
+            if login_email and login_password:
+                try:
+                    import firebase_admin
+                    from firebase_admin import auth
+
+                    user = auth.get_user_by_email(login_email)
+                    st.session_state.user_email = login_email
+                    st.success(f"✅ ¡Bienvenido, {login_email}!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Email o contraseña incorrectos: {str(e)}")
+            else:
+                st.warning("Por favor ingresa email y contraseña")
+
     st.stop()
 
 # ─── FIREBASE CONNECTION ───
@@ -77,8 +87,12 @@ if df.empty:
     st.stop()
 
 # ─── SIDEBAR: AUTH & FILTERS ───
-st.sidebar.button("🚪 Cerrar sesión", on_click=st.logout, use_container_width=True)
-st.sidebar.caption(f"👤 {st.user.email}")
+def logout():
+    st.session_state.user_email = None
+    st.rerun()
+
+st.sidebar.button("🚪 Cerrar sesión", on_click=logout, use_container_width=True)
+st.sidebar.caption(f"👤 {st.session_state.user_email}")
 st.sidebar.divider()
 
 st.sidebar.header("🔧 Filtros")

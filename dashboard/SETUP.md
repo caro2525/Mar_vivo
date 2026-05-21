@@ -1,67 +1,22 @@
-# 🔐 Setup: Autenticación Google para Dashboard Mar Vivo
+# 🔐 Setup: Autenticación Email/Password para Dashboard Mar Vivo
 
-## 1️⃣ Obtener credenciales de Google OAuth
+## 1️⃣ Crear usuarios en Firebase Authentication
 
-### En Google Cloud Console:
+### En Firebase Console:
 
-1. Abre [https://console.cloud.google.com/](https://console.cloud.google.com/)
+1. Ve a [https://console.firebase.google.com/](https://console.firebase.google.com/)
 2. Selecciona el proyecto `marvivo-8148d`
-3. Ve a **APIs & Services → Credenciales**
-4. Haz clic en **+ Crear credenciales → ID de cliente OAuth 2.0**
-5. Selecciona **Aplicación web**
-6. En "URIs de redirección autorizados", agrega:
-   ```
-   http://localhost:8501/oauth2callback
-   https://<tu-nombre-app>.streamlit.app/oauth2callback
-   ```
-7. Copia el **Client ID** y **Client Secret**
+3. Ve a **Authentication → Users**
+4. Haz clic en **Add user**
+5. Ingresa:
+   - **Email**: el email del investigador
+   - **Password**: una contraseña segura
+6. Haz clic en **Create user**
+7. Repite para cada investigador que necesite acceso
 
 ---
 
-## 2️⃣ Configurar secretos locales
-
-### Edita `.streamlit/secrets.toml`:
-
-```toml
-[auth]
-redirect_uri = "http://localhost:8501/oauth2callback"
-cookie_secret = "abcd1234efgh5678ijkl9012mnop3456"
-
-[auth.google]
-client_id = "AQUI_TU_CLIENT_ID.apps.googleusercontent.com"
-client_secret = "AQUI_TU_CLIENT_SECRET"
-server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
-
-[authorized_users]
-emails = [
-    "investigador1@gmail.com",
-    "investigador2@gmail.com",
-    "rcavieses@gmail.com"
-]
-```
-
-### Para Streamlit Cloud:
-
-1. Publica la app: `streamlit run dashboard.py`
-2. Ve al dashboard en Streamlit Cloud
-3. Abre **Settings → Secrets**
-4. Pega el contenido de `secrets.toml` (con `redirect_uri` ajurada a tu URL real)
-5. Cambia `redirect_uri` a:
-   ```
-   https://<tu-nombre-app>.streamlit.app/oauth2callback
-   ```
-
----
-
-## 3️⃣ Agregar usuarios autorizados
-
-Edita `authorized_users.emails` en `secrets.toml` con los emails de los usuarios.
-
-Para Streamlit Cloud, actualiza en **Settings → Secrets**.
-
----
-
-## 4️⃣ Ejecutar localmente
+## 2️⃣ Ejecutar el dashboard localmente
 
 ```bash
 cd dashboard
@@ -69,31 +24,55 @@ pip install -r requirements.txt
 streamlit run dashboard.py
 ```
 
-Abre **http://localhost:8501** y haz clic en "Continuar con Google"
+Abre **http://localhost:8501**
+
+---
+
+## 3️⃣ Iniciar sesión
+
+En la pantalla de login:
+- **Email**: ingresa el email creado en Firebase
+- **Contraseña**: ingresa la contraseña creada en Firebase
+- Haz clic en **Inicia sesión**
+
+Si las credenciales son correctas, accederás al dashboard.
+
+---
+
+## 4️⃣ Para Streamlit Cloud (producción)
+
+1. Publica el repo en GitHub
+2. Ve a [share.streamlit.io](https://share.streamlit.io)
+3. Haz clic en **New app**
+4. Selecciona tu repo y rama
+5. La app se publicará automáticamente
+
+Los usuarios usarán el mismo email/password de Firebase para iniciar sesión.
 
 ---
 
 ## ✅ Verificación
 
-- [ ] Pantalla de login aparece antes del dashboard
-- [ ] Puedo hacer login con Google
-- [ ] Si mi email está autorizado, veo el dashboard
-- [ ] Si mi email NO está autorizado, veo error de acceso denegado
+- [ ] Aparece pantalla de login al abrir el dashboard
+- [ ] Puedo iniciar sesión con un email registrado en Firebase
+- [ ] Veo el dashboard después de iniciar sesión
 - [ ] El botón "Cerrar sesión" funciona
 - [ ] Mi email aparece en el sidebar
+- [ ] Si intento con credenciales incorrectas, veo error
 
 ---
 
 ## 🆘 Troubleshooting
 
-**Error: "OIDC configuration is invalid"**
-- Verifica que `client_id` y `client_secret` son correctos
-- Asegúrate de que la URL de redirección coincide en Google Cloud
+**Error: "Email o contraseña incorrectos"**
+- Verifica que el email está registrado en Firebase Authentication
+- Verifica que la contraseña es correcta
+- Asegúrate de que `serviceAccount.json` está en la carpeta `dashboard/`
 
-**Error: "Email not authorized"**
-- Verifica que el email está en `authorized_users.emails`
-- Recuerda actualizar en Streamlit Cloud si es producción
+**No veo la pantalla de login**
+- Actualiza Streamlit: `pip install --upgrade streamlit`
+- Recarga la página en el navegador
 
-**No me permite hacer login**
-- Asegúrate de que Streamlit ≥ 1.41 está instalado
-- Actualiza: `pip install --upgrade streamlit`
+**Error: "serviceAccount.json not found"**
+- Coloca tu archivo `serviceAccount.json` en `dashboard/`
+- No está en `.gitignore`, así que ten cuidado si lo subes a GitHub
