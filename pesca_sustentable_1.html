@@ -2906,17 +2906,6 @@ function renderLoop(){
       ctx.strokeStyle=`rgba(255,255,255,${.08+.06*Math.abs(Math.sin(wt+waves.indexOf(w)+1))})`; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.moveTo(w.x-30,wy+5); ctx.quadraticCurveTo(w.x+10,wy-w.amp*.3,w.x+35,wy+5); ctx.stroke();
     }
-  }
-
-    for(const w of waves){
-      w.x-=w.speed*(G.storm?3.5:1); if(w.x<-130)w.x=W+130;
-      const wy=H*w.y+Math.sin(wt*1.4+waves.indexOf(w))*w.amp;
-      ctx.strokeStyle=`rgba(255,255,255,${.18+.15*Math.abs(Math.sin(wt+waves.indexOf(w)))})`; ctx.lineWidth=2.5;
-      ctx.beginPath(); ctx.moveTo(w.x-55,wy); ctx.quadraticCurveTo(w.x,wy-w.amp*.8,w.x+55,wy); ctx.stroke();
-      ctx.strokeStyle=`rgba(255,255,255,${.08+.06*Math.abs(Math.sin(wt+waves.indexOf(w)+1))})`; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(w.x-30,wy+5); ctx.quadraticCurveTo(w.x+10,wy-w.amp*.3,w.x+35,wy+5); ctx.stroke();
-    }
-  }
 
   // ── LAYER 1: SEABED (behind everything) ──
   { const _seaW=W>H?W*0.56:W;
