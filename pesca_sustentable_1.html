@@ -1375,7 +1375,7 @@ let spriteSheetDims={cols:12,rows:4};
 let spriteDims={w:0,h:0};
 
 const TYPE_TO_ROW={fisherman:0,scientist:1,elder:2,boy:3};
-const DIR_TO_COL={0:0,1:1,-1:2}; // 0:front, 1:right(dir>0), -1:left(dir<0)
+const DIR_TO_COL={0:0,1:1,'-1':2}; // 0:front, 1:right(dir>0), -1:left(dir<0)
 
 function loadVillagerSprites(){
   return new Promise((resolve)=>{
