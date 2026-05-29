@@ -2866,11 +2866,16 @@ function renderLoop(){
 
   // Clouds – use sprite art when available
   if(G.weather==='cloudy'||G.weather==='windy'){
+    const cloudSizes = [
+      {w:110,h:70},
+      {w:140,h:90},
+      {w:170,h:110},
+      {w:130,h:80}
+    ];
     for(let i=0;i<4;i++){
       const cx=((i*W/4+wt*18+i*60)%(W+180))-90;
-      const cy=H*.06+i%2*20;
-      const w = 160 + i*18;
-      const h = 90 + i*10;
+      const cy=H*.06+(i%2)*22;
+      const {w,h} = cloudSizes[i%cloudSizes.length];
       if(CLOUD_IMG.complete && CLOUD_IMG.naturalWidth>0){
         ctx.drawImage(CLOUD_IMG, cx - w/2, cy - h/2, w, h);
       } else {
