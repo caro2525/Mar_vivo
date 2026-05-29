@@ -2742,22 +2742,10 @@ function drawBirds(W,H){
       const vx=Math.sin(b.veer)*8;
       const bx=Math.round(b.x+vx), by=Math.round(b.y+Math.sin(b.bob)*4);
       ctx.translate(bx,by); if(b.dir<0) ctx.scale(-1,1);
-      // Draw sprite if loaded
+      // Draw sprite if loaded — otherwise skip this gull
       if(SEAGULL_IMG.complete && SEAGULL_IMG.naturalWidth>0){
         const w=b.size*8.4, h=b.size*6.8;
         ctx.drawImage(SEAGULL_IMG,-w/2,-h/2,w,h);
-      } // No fallback art: skip drawing gulls when the sprite is unavailable
-
-        ctx.beginPath(); ctx.moveTo(b.size*1.6,-b.size*(0.5+wf*.6)); ctx.lineTo(b.size*1.9,-b.size*(0.4+wf*.5)); ctx.stroke();
-        ctx.fillStyle='#f8f8f5'; ctx.beginPath(); ctx.arc(-b.size*.9,0,b.size*.35,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#d4a028';
-        ctx.beginPath(); ctx.moveTo(-b.size*1.2,-b.size*.06); ctx.lineTo(-b.size*1.65,-b.size*.06);
-        ctx.lineTo(-b.size*1.55,b.size*.06); ctx.lineTo(-b.size*1.15,b.size*.04); ctx.closePath(); ctx.fill();
-        ctx.fillStyle='#c03820';
-        ctx.beginPath(); ctx.ellipse(-b.size*1.5,b.size*.04,b.size*.08,b.size*.04,0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#1a1810'; ctx.beginPath(); ctx.arc(-b.size*.82,-b.size*.05,b.size*.09,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-b.size*.79,-b.size*.07,b.size*.04,0,Math.PI*2); ctx.fill();
-        ctx.lineCap='butt'; ctx.lineWidth=1;
       }
     }
 
