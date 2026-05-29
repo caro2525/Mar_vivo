@@ -1308,6 +1308,10 @@ const SKY_IMG = new Image();
 SKY_IMG.src = 'sprite/Sky.png';
 const NIGHT_IMG = new Image();
 NIGHT_IMG.src = 'sprite/Night.png';
+const RAIN_IMG = new Image();
+RAIN_IMG.src = 'sprite/Rain.png';
+const STORM_IMG = new Image();
+STORM_IMG.src = 'sprite/Storm.png';
 const SEA_DAY_IMG = new Image();
 SEA_DAY_IMG.src = 'sprite/Sea at day.png';
 const SEA_NIGHT_IMG = new Image();
@@ -2806,11 +2810,24 @@ function renderLoop(){
   const hr=G.hour, isNight=hr<6||hr>20;
 
   // SKY
-  if(G.storm){
-    const skyTop='#3a4a6a';
-    const skyBot='#4a5a7a';
-    const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
-    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+  if(G.storm || G.weather==='storm'){
+    if(STORM_IMG.complete && STORM_IMG.naturalWidth>0){
+      ctx.drawImage(STORM_IMG, 0, 0, W, H*.48);
+    } else {
+      const skyTop='#3a4a6a';
+      const skyBot='#4a5a7a';
+      const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+      ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+    }
+  } else if(G.weather==='rain'||G.weather==='rainy'){
+    if(RAIN_IMG.complete && RAIN_IMG.naturalWidth>0){
+      ctx.drawImage(RAIN_IMG, 0, 0, W, H*.48);
+    } else {
+      const skyTop='#4b6f9d';
+      const skyBot='#2e4d70';
+      const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+      ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+    }
   } else if(isNight){
     if(NIGHT_IMG.complete && NIGHT_IMG.naturalWidth>0){
       ctx.drawImage(NIGHT_IMG, 0, 0, W, H*.48);
