@@ -1316,6 +1316,8 @@ const SEA_DAY_IMG = new Image();
 SEA_DAY_IMG.src = 'sprite/Sea at day.png';
 const SEA_NIGHT_IMG = new Image();
 SEA_NIGHT_IMG.src = 'sprite/Sea at night.png';
+const TUNA_IMG = new Image();
+TUNA_IMG.src = 'sprite/At%C3%BAn.png';
 
 function initBirds(){
   seaBirds=[];
@@ -1676,8 +1678,17 @@ function drawFish(cx,cy,sp,sc,faceR){
     px(-3*sc,-7*sc,1*sc,1*sc,'rgba(255,255,255,.7)');
     // Ink sac (faint)
     px(-2*sc,-2*sc,4*sc,4*sc,shade(sp.color,-30));
-  } else {
-    // DETAILED GENERIC FISH
+  } else if(sp.name==='Atun' || sp.name==='Atún'){
+    if(TUNA_IMG.complete && TUNA_IMG.naturalWidth){
+      const iw = TUNA_IMG.naturalWidth;
+      const ih = TUNA_IMG.naturalHeight;
+      const targetW = 28*sc;
+      const targetH = Math.round(targetW * ih / iw);
+      ctx.drawImage(TUNA_IMG, -targetW/2, -targetH/2, targetW, targetH);
+      ctx.restore();
+      return;
+    }
+    // fallback to generic fish drawing if sprite is not loaded yet
     const bw=18*sc, bh=10*sc;
     // Shadow underneath
     ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(-bw/2+sc,sc,bw,bh*.5);
