@@ -1300,6 +1300,10 @@ const SEAGULL_IMG = new Image();
 SEAGULL_IMG.src = 'sprite/Seagull (2).png';
 const CLOUD_IMG = new Image();
 CLOUD_IMG.src = 'sprite/Cloud.png';
+const SUN_IMG = new Image();
+SUN_IMG.src = 'sprite/Sun.png';
+const MOON_IMG = new Image();
+MOON_IMG.src = 'sprite/Moon.png';
 
 function initBirds(){
   seaBirds=[];
@@ -2811,13 +2815,25 @@ function renderLoop(){
   const sunX=(H>W?W*.55:W*.72)+Math.sin(wt*.04)*12;
   const sunY=H*.24-Math.sin(dp*Math.PI)*H*.13;
   if(hr>=6&&hr<=18&&!G.storm){
-    ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#f1c40f';
-    ctx.beginPath(); ctx.arc(sunX,sunY,35,0,Math.PI*2); ctx.fill(); ctx.restore();
-    ctx.fillStyle='#f1c40f'; ctx.beginPath(); ctx.arc(sunX,sunY,18,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
+    const sunW = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
+    const sunH = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
+    if(SUN_IMG.complete && SUN_IMG.naturalWidth>0){
+      ctx.drawImage(SUN_IMG, sunX - sunW/2, sunY - sunH/2, sunW, sunH);
+    } else {
+      ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#f1c40f';
+      ctx.beginPath(); ctx.arc(sunX,sunY,35,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.fillStyle='#f1c40f'; ctx.beginPath(); ctx.arc(sunX,sunY,18,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
+    }
   } else if(!G.storm){
-    ctx.fillStyle='#cfd8e3'; ctx.beginPath(); ctx.arc(sunX,sunY,14,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#b0bcc8'; ctx.beginPath(); ctx.arc(sunX+4,sunY-3,6,0,Math.PI*2); ctx.fill();
+    const moonW = 82;
+    const moonH = 82;
+    if(MOON_IMG.complete && MOON_IMG.naturalWidth>0){
+      ctx.drawImage(MOON_IMG, sunX - moonW/2, sunY - moonH/2, moonW, moonH);
+    } else {
+      ctx.fillStyle='#cfd8e3'; ctx.beginPath(); ctx.arc(sunX,sunY,14,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b0bcc8'; ctx.beginPath(); ctx.arc(sunX+4,sunY-3,6,0,Math.PI*2); ctx.fill();
+    }
   }
 
   // Clouds – use sprite art when available
