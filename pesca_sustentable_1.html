@@ -1304,6 +1304,10 @@ const SUN_IMG = new Image();
 SUN_IMG.src = 'sprite/Sun.png';
 const MOON_IMG = new Image();
 MOON_IMG.src = 'sprite/Moon.png';
+const SKY_IMG = new Image();
+SKY_IMG.src = 'sprite/Sky.png';
+const NIGHT_IMG = new Image();
+NIGHT_IMG.src = 'sprite/Night.png';
 
 function initBirds(){
   seaBirds=[];
@@ -2798,10 +2802,30 @@ function renderLoop(){
   const hr=G.hour, isNight=hr<6||hr>20;
 
   // SKY
-  const skyTop=G.storm?'#3a4a6a':isNight?'#0d1a38':hr<10?'#6ab0e0':'#4a9ad4';
-  const skyBot=G.storm?'#4a5a7a':isNight?'#1a2a50':hr<10?'#90c8f0':'#70b8f0';
-  const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
-  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+  if(G.storm){
+    const skyTop='#3a4a6a';
+    const skyBot='#4a5a7a';
+    const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+  } else if(isNight){
+    if(NIGHT_IMG.complete && NIGHT_IMG.naturalWidth>0){
+      ctx.drawImage(NIGHT_IMG, 0, 0, W, H*.48);
+    } else {
+      const skyTop='#0d1a38';
+      const skyBot='#1a2a50';
+      const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+      ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+    }
+  } else {
+    if(SKY_IMG.complete && SKY_IMG.naturalWidth>0){
+      ctx.drawImage(SKY_IMG, 0, 0, W, H*.48);
+    } else {
+      const skyTop=hr<10?'#6ab0e0':'#4a9ad4';
+      const skyBot=hr<10?'#90c8f0':'#70b8f0';
+      const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
+      ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
+    }
+  }
 
   // Stars
   if(isNight) for(let i=0;i<55;i++){
