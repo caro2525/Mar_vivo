@@ -2683,6 +2683,9 @@ function drawVillager(x,y,type,faceR,scale=1,variant=0){
 // ─── RENDER LOOP ───────────────────────────────────────────
 function drawBirds(W,H){
   const GY=H*0.70;
+  if(!(SEAGULL_IMG.complete && SEAGULL_IMG.naturalWidth>0)){
+    seaBirds = seaBirds.filter(b=>b.type!=='gull');
+  }
   for(const b of seaBirds){
     // Move
     b.x+=b.dir*b.speed*(b.soaring?0.6:1);
