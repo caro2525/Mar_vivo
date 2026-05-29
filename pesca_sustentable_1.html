@@ -1075,7 +1075,7 @@ function checkOrientation(){
     if(cv && typeof boatX !== 'undefined'){
       cv.width = window.innerWidth;
       cv.height = window.innerHeight;
-      boatX = cv.width * (isPortrait ? 0.25 : 0.38);
+      boatX = cv.width * (isPortrait ? 0.50 : 0.45);
       boatY = cv.height * 0.50;
       if(typeof initWaves === 'function') initWaves();
       if(typeof initBirds === 'function') initBirds();
@@ -1345,7 +1345,7 @@ function initBirds(){
     size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
   });
 }
-const MAIN_BOAT_SCALE = 0.15;
+const MAIN_BOAT_SCALE = 0.35;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
@@ -1427,8 +1427,8 @@ function initNpcBoats(){
   npcBoats = [];
   for(let i = 0; i < 3; i++){
     npcBoats.push({
-      x: Math.random() * canvas.width * 0.8 + canvas.width * 0.1, // Random position across the sea
-      y: canvas.height * (0.40 + Math.random() * 0.06), // Higher and more distant on the water
+      x: Math.random() * canvas.width * 0.6 + canvas.width * 0.2, // More centered position across the sea
+      y: canvas.height * (0.40 + Math.random() * 0.05), // Higher and more distant on the water
       dir: Math.random() > 0.5 ? 1 : -1, // Random direction
       speed: 0.15 + Math.random() * 0.25, // Even slower movement
       fishing: false,
@@ -3015,11 +3015,11 @@ function renderLoop(){
   drawBirds(W,H);
 
   // ── LAYER 5: BOAT (behind structures) ──
-  if(boatX>W*0.54) boatX=W*0.38;
+  if(boatX>W*0.65) boatX=W*0.45;
   
   // Draw NPC boats first so they appear more distant in the scene
   npcBoats.forEach(boat => {
-    drawBoat(boat.x, boat.y, PS * 0.65, {opacity: 0.8});
+    drawBoat(boat.x, boat.y, PS * 0.9, {opacity: 0.8});
     // Draw fishing line if fishing
     if(boat.fishing){
       const lx = boat.x + 14 * 0.65, ly = boat.y + 26 * 0.65 + Math.sin(wt*3)*8*0.65;
@@ -4883,7 +4883,7 @@ async function deleteSlot(slot,mode){
 // ─── INIT ──────────────────────────────────────────────────
 window.addEventListener('resize',()=>{
   canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-  boatX=canvas.width*.38; boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
+  boatX=canvas.width*(canvas.height>canvas.width?0.50:0.45); boatY=canvas.height*(canvas.height>canvas.width?0.48:0.50);
   initWaves(); initBirds(); villagers=VILLAGERS_DEF.map(v=>({...v,px:v.xR*canvas.width}));
   if(tc){tc.width=window.innerWidth;tc.height=window.innerHeight;tw=tc.width;th=tc.height;}
   checkOrientation();
