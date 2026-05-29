@@ -1308,6 +1308,10 @@ const SKY_IMG = new Image();
 SKY_IMG.src = 'sprite/Sky.png';
 const NIGHT_IMG = new Image();
 NIGHT_IMG.src = 'sprite/Night.png';
+const SEA_DAY_IMG = new Image();
+SEA_DAY_IMG.src = 'sprite/Sea at day.png';
+const SEA_NIGHT_IMG = new Image();
+SEA_NIGHT_IMG.src = 'sprite/Sea at night.png';
 
 function initBirds(){
   seaBirds=[];
@@ -2896,10 +2900,22 @@ function renderLoop(){
     }
   }
 
-  // WATER – bright turquoise island style
-  const zw=G.zone==='manglar'?['#40c8a0','#20a880']:G.zone==='arrecife'?['#30b8d8','#20a0c8']:['#2090c8','#1870a8'];
-  const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
-  ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+  // WATER – sea sprites for day and night
+  if(!G.storm){
+    if(!isNight && SEA_DAY_IMG.complete && SEA_DAY_IMG.naturalWidth>0){
+      ctx.drawImage(SEA_DAY_IMG, 0, 0, SEA_DAY_IMG.naturalWidth, SEA_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
+    } else if(isNight && SEA_NIGHT_IMG.complete && SEA_NIGHT_IMG.naturalWidth>0){
+      ctx.drawImage(SEA_NIGHT_IMG, 0, 0, SEA_NIGHT_IMG.naturalWidth, SEA_NIGHT_IMG.naturalHeight, 0, H*.36, W, H*.34);
+    } else {
+      const zw=G.zone==='manglar'?['#40c8a0','#20a880']:G.zone==='arrecife'?['#30b8d8','#20a0c8']:['#2090c8','#1870a8'];
+      const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
+      ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+    }
+  } else {
+    const zw=G.zone==='manglar'?['#40c8a0','#20a880']:G.zone==='arrecife'?['#30b8d8','#20a0c8']:['#2090c8','#1870a8'];
+    const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
+    ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+  }
   // Foam/shimmer con reflejos de colores
   for(let i=0;i<6;i++){
     ctx.fillStyle=`rgba(255,255,255,${.07+.05*Math.sin(wt*1.2+i*1.1)})`;
