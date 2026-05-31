@@ -1391,15 +1391,17 @@ function initBirds(){
     bob:Math.random()*Math.PI*2, bobSpeed:0.6, wingPhase:Math.random()*Math.PI*2,
     wingSpeed:0.04, size:10+Math.random()*4, soaring:Math.random()>0.4
   });
-  // Seagulls – faster, smaller, more erratic
-  for(let i=0;i<6;i++) seaBirds.push({
-    type:'gull', x:Math.random()*canvas.width*.8,
-    y:canvas.height*(.30+Math.random()*.14),
-    dir:Math.random()>.5?1:-1, speed:0.9+Math.random()*.8,
-    bob:Math.random()*Math.PI*2, bobSpeed:1.2+Math.random()*.5,
-    wingPhase:Math.random()*Math.PI*2, wingSpeed:0.09+Math.random()*.04,
-    size:5+Math.random()*3, soaring:Math.random()>0.7, veer:Math.random()*Math.PI*2
-  });
+  // Seagulls – faster, smaller, more erratic (only add if sprite is available)
+  if(SEAGULL_IMG.complete && SEAGULL_IMG.naturalWidth>0){
+    for(let i=0;i<6;i++) seaBirds.push({
+      type:'gull', x:Math.random()*canvas.width*.8,
+      y:canvas.height*(.30+Math.random()*.14),
+      dir:Math.random()>.5?1:-1, speed:0.9+Math.random()*.8,
+      bob:Math.random()*Math.PI*2, bobSpeed:1.2+Math.random()*.5,
+      wingPhase:Math.random()*Math.PI*2, wingSpeed:0.09+Math.random()*.04,
+      size:5+Math.random()*3, soaring:Math.random()>0.7, veer:Math.random()*Math.PI*2
+    });
+  }
   // Sandpipers – tiny, run along beach
   for(let i=0;i<4;i++) seaBirds.push({
     type:'sandpiper', x:Math.random()*canvas.width*.5,
