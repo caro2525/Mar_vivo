@@ -1325,7 +1325,7 @@ MANGROVE_DAY_IMG.src = 'sprite/Mangrove day.png';
 const MANGROVE_NIGHT_IMG = new Image();
 MANGROVE_NIGHT_IMG.src = 'sprite/Mangrove at night.png';
 const TUNA_IMG = new Image();
-TUNA_IMG.src = 'sprite/At%C3%BAn.png';
+TUNA_IMG.src = 'sprite/Atún.png';
 
 function initBirds(){
   seaBirds=[];
@@ -1355,7 +1355,7 @@ function initBirds(){
     size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
   });
 }
-const MAIN_BOAT_SCALE = 0.4389;
+const MAIN_BOAT_SCALE = 0.505;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
@@ -3057,14 +3057,15 @@ function renderLoop(){
   if(boatX>W*0.65) boatX=W*0.45;
   
   // Draw NPC boats first so they appear more distant in the scene
+  const npcBoatScale = MAIN_BOAT_SCALE;
   npcBoats.forEach(boat => {
-    drawBoat(boat.x, boat.y, PS * 1.026, {opacity: 0.8});
+    drawBoat(boat.x, boat.y, npcBoatScale, {opacity: 0.8});
     // Draw fishing line if fishing
     if(boat.fishing){
-      const lx = boat.x + 14 * 0.65, ly = boat.y + 26 * 0.65 + Math.sin(wt*3)*8*0.65;
-      ctx.strokeStyle='rgba(255,255,200,.4)'; ctx.lineWidth=1 * 0.65; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.moveTo(boat.x+20*0.65, boat.y-8*0.65); ctx.lineTo(lx, ly+30*0.65); ctx.stroke(); ctx.setLineDash([]);
-      px(lx-3*0.65, ly+30*0.65, 8*0.65, 5*0.65, '#e74c3c'); px(lx-1*0.65, ly+30*0.65, 4*0.65, 2*0.65, '#fff');
+      const lx = boat.x + 14 * npcBoatScale, ly = boat.y + 26 * npcBoatScale + Math.sin(wt*3) * 8 * npcBoatScale;
+      ctx.strokeStyle='rgba(255,255,200,.4)'; ctx.lineWidth=1 * npcBoatScale; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(boat.x + 20 * npcBoatScale, boat.y - 8 * npcBoatScale); ctx.lineTo(lx, ly + 30 * npcBoatScale); ctx.stroke(); ctx.setLineDash([]);
+      px(lx - 3 * npcBoatScale, ly + 30 * npcBoatScale, 8 * npcBoatScale, 5 * npcBoatScale, '#e74c3c'); px(lx - 1 * npcBoatScale, ly + 30 * npcBoatScale, 4 * npcBoatScale, 2 * npcBoatScale, '#fff');
     }
   });
   drawBoat(boatX,boatY,MAIN_BOAT_SCALE);
