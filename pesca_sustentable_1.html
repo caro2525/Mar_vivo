@@ -1316,6 +1316,10 @@ const SEA_DAY_IMG = new Image();
 SEA_DAY_IMG.src = 'sprite/Sea at day.png';
 const SEA_NIGHT_IMG = new Image();
 SEA_NIGHT_IMG.src = 'sprite/Sea at night.png';
+const REEF_DAY_IMG = new Image();
+REEF_DAY_IMG.src = 'sprite/Reefs day.png';
+const REEF_NIGHT_IMG = new Image();
+REEF_NIGHT_IMG.src = 'sprite/Reef nights.png';
 const MANGROVE_DAY_IMG = new Image();
 MANGROVE_DAY_IMG.src = 'sprite/Mangrove day.png';
 const MANGROVE_NIGHT_IMG = new Image();
@@ -1351,7 +1355,7 @@ function initBirds(){
     size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
   });
 }
-const MAIN_BOAT_SCALE = 0.42735;
+const MAIN_BOAT_SCALE = 0.4389;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
@@ -2950,6 +2954,16 @@ function renderLoop(){
         const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
         ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
       }
+    } else if(G.zone==='arrecife'){
+      if(!isNight && REEF_DAY_IMG.complete && REEF_DAY_IMG.naturalWidth>0){
+        ctx.drawImage(REEF_DAY_IMG, 0, 0, REEF_DAY_IMG.naturalWidth, REEF_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
+      } else if(isNight && REEF_NIGHT_IMG.complete && REEF_NIGHT_IMG.naturalWidth>0){
+        ctx.drawImage(REEF_NIGHT_IMG, 0, 0, REEF_NIGHT_IMG.naturalWidth, REEF_NIGHT_IMG.naturalHeight, 0, H*.36, W, H*.34);
+      } else {
+        const zw=['#30b8d8','#20a0c8'];
+        const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
+        ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+      }
     } else if(!isNight && SEA_DAY_IMG.complete && SEA_DAY_IMG.naturalWidth>0){
       ctx.drawImage(SEA_DAY_IMG, 0, 0, SEA_DAY_IMG.naturalWidth, SEA_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
     } else if(isNight && SEA_NIGHT_IMG.complete && SEA_NIGHT_IMG.naturalWidth>0){
@@ -3044,7 +3058,7 @@ function renderLoop(){
   
   // Draw NPC boats first so they appear more distant in the scene
   npcBoats.forEach(boat => {
-    drawBoat(boat.x, boat.y, PS * 0.9, {opacity: 0.8});
+    drawBoat(boat.x, boat.y, PS * 1.026, {opacity: 0.8});
     // Draw fishing line if fishing
     if(boat.fishing){
       const lx = boat.x + 14 * 0.65, ly = boat.y + 26 * 0.65 + Math.sin(wt*3)*8*0.65;
