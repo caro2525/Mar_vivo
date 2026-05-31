@@ -1328,10 +1328,6 @@ const MANGROVE_DAY_IMG = new Image();
 MANGROVE_DAY_IMG.src = 'sprite/Mangrove day.png';
 const MANGROVE_NIGHT_IMG = new Image();
 MANGROVE_NIGHT_IMG.src = 'sprite/Mangrove at night.png';
-const MANGROVE_RAIN_IMG = new Image();
-MANGROVE_RAIN_IMG.src = 'sprite/Mangrove rain.png';
-const MANGROVE_STORME_IMG = new Image();
-MANGROVE_STORME_IMG.src = 'sprite/manglar storme.png';
 const TUNA_IMG = new Image();
 TUNA_IMG.src = 'sprite/Atún.png';
 const SIERRA_IMG = new Image();
@@ -3012,11 +3008,7 @@ function renderLoop(){
 
   // WATER – sea sprites for day, rain and storm
   if(G.zone==='manglar'){
-    if(G.storm && MANGROVE_STORME_IMG.complete && MANGROVE_STORME_IMG.naturalWidth>0){
-      ctx.drawImage(MANGROVE_STORME_IMG, 0, 0, MANGROVE_STORME_IMG.naturalWidth, MANGROVE_STORME_IMG.naturalHeight, 0, H*.36, W, H*.34);
-    } else if((G.weather==='rain' || G.weather==='rainy') && MANGROVE_RAIN_IMG.complete && MANGROVE_RAIN_IMG.naturalWidth>0){
-      ctx.drawImage(MANGROVE_RAIN_IMG, 0, 0, MANGROVE_RAIN_IMG.naturalWidth, MANGROVE_RAIN_IMG.naturalHeight, 0, H*.36, W, H*.34);
-    } else if(!isNight && MANGROVE_DAY_IMG.complete && MANGROVE_DAY_IMG.naturalWidth>0){
+    if(!isNight && MANGROVE_DAY_IMG.complete && MANGROVE_DAY_IMG.naturalWidth>0){
       ctx.drawImage(MANGROVE_DAY_IMG, 0, 0, MANGROVE_DAY_IMG.naturalWidth, MANGROVE_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
     } else if(isNight && MANGROVE_NIGHT_IMG.complete && MANGROVE_NIGHT_IMG.naturalWidth>0){
       ctx.drawImage(MANGROVE_NIGHT_IMG, 0, 0, MANGROVE_NIGHT_IMG.naturalWidth, MANGROVE_NIGHT_IMG.naturalHeight, 0, H*.36, W, H*.34);
