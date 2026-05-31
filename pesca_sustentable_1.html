@@ -1316,6 +1316,10 @@ const SEA_DAY_IMG = new Image();
 SEA_DAY_IMG.src = 'sprite/Sea at day.png';
 const SEA_NIGHT_IMG = new Image();
 SEA_NIGHT_IMG.src = 'sprite/Sea at night.png';
+const MANGROVE_DAY_IMG = new Image();
+MANGROVE_DAY_IMG.src = 'sprite/Mangrove day.png';
+const MANGROVE_NIGHT_IMG = new Image();
+MANGROVE_NIGHT_IMG.src = 'sprite/Mangrove at night.png';
 const TUNA_IMG = new Image();
 TUNA_IMG.src = 'sprite/At%C3%BAn.png';
 
@@ -1347,7 +1351,7 @@ function initBirds(){
     size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
   });
 }
-const MAIN_BOAT_SCALE = 0.385;
+const MAIN_BOAT_SCALE = 0.42735;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
@@ -2936,7 +2940,17 @@ function renderLoop(){
 
   // WATER – sea sprites for day and night
   if(!G.storm){
-    if(!isNight && SEA_DAY_IMG.complete && SEA_DAY_IMG.naturalWidth>0){
+    if(G.zone==='manglar'){
+      if(!isNight && MANGROVE_DAY_IMG.complete && MANGROVE_DAY_IMG.naturalWidth>0){
+        ctx.drawImage(MANGROVE_DAY_IMG, 0, 0, MANGROVE_DAY_IMG.naturalWidth, MANGROVE_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
+      } else if(isNight && MANGROVE_NIGHT_IMG.complete && MANGROVE_NIGHT_IMG.naturalWidth>0){
+        ctx.drawImage(MANGROVE_NIGHT_IMG, 0, 0, MANGROVE_NIGHT_IMG.naturalWidth, MANGROVE_NIGHT_IMG.naturalHeight, 0, H*.36, W, H*.34);
+      } else {
+        const zw=['#40c8a0','#20a880'];
+        const wg=ctx.createLinearGradient(0,H*.36,0,H*.70); wg.addColorStop(0,zw[0]); wg.addColorStop(1,zw[1]);
+        ctx.fillStyle=wg; ctx.fillRect(0,H*.36,W,H*.34);
+      }
+    } else if(!isNight && SEA_DAY_IMG.complete && SEA_DAY_IMG.naturalWidth>0){
       ctx.drawImage(SEA_DAY_IMG, 0, 0, SEA_DAY_IMG.naturalWidth, SEA_DAY_IMG.naturalHeight, 0, H*.36, W, H*.34);
     } else if(isNight && SEA_NIGHT_IMG.complete && SEA_NIGHT_IMG.naturalWidth>0){
       ctx.drawImage(SEA_NIGHT_IMG, 0, 0, SEA_NIGHT_IMG.naturalWidth, SEA_NIGHT_IMG.naturalHeight, 0, H*.36, W, H*.34);
