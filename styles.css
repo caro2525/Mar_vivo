@@ -1,6 +1,0 @@
-/* Basic responsive styles and pixel-art look */
-html,body{height:100%;margin:0;background:#071423;font-family:monospace}
-canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-
-/* ensure canvas high DPI support */
-@media (prefers-reduced-motion: no-preference){ }
