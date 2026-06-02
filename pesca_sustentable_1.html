@@ -74,18 +74,19 @@
   /* ── SCREENS ── */
   .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:100;}
   .screen.hidden{display:none;}
-  #title-screen{background:radial-gradient(ellipse at 50% 55%,#0d3a5c 0%,#050f1a 100%);}
-  #title-screen canvas{position:absolute;inset:0;width:100%;height:100%;}
+  #title-screen{background:#050f1a url('sprite/Menu.png') center top / contain no-repeat;position:relative;justify-content:flex-start;padding-top:1rem;}
+  #title-screen canvas{display:none;}
+  #title-screen .title-menu{position:absolute;left:50%;top:52%;width:70%;max-width:480px;transform:translateX(-50%);}
+  #title-screen .title-btn{position:absolute;left:50%;transform:translateX(-50%);width:100%;height:12vh;min-height:50px;background:transparent;border:none;color:transparent;padding:0;margin:0;cursor:pointer;}
+  #title-screen .title-btn span{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;white-space:nowrap;}
+  #title-screen .title-btn.new{top:0;}
+  #title-screen .title-btn.continue{top:13%;}
+  #title-screen .title-btn.logbook{top:26%;}
+  #title-screen .title-btn.options{top:39%;}
+  #title-screen .title-btn.credits{top:52%;}
 
-  .game-title{
-    font-size:clamp(14px,4vw,34px);
-    color:var(--wave);
-    text-shadow:3px 3px 0 #0a3a5c,0 0 40px #5dade260;
-    letter-spacing:3px;text-align:center;z-index:1;
-    animation:titlePulse 3s ease-in-out infinite;
-  }
-  .game-subtitle{font-size:clamp(5px,1.4vw,10px);color:var(--sand);margin-top:8px;z-index:1;letter-spacing:1px;opacity:.85;}
-  @keyframes titlePulse{0%,100%{text-shadow:3px 3px 0 #0a3a5c,0 0 20px #5dade230;}50%{text-shadow:3px 3px 0 #0a3a5c,0 0 60px #5dade2aa;}}
+  .game-title{display:none;}
+  .game-subtitle{display:none;}
 
   .menu-btn{
     font-family:var(--font-pixel);
@@ -652,14 +653,13 @@
 
   <div class="screen" id="title-screen">
     <canvas id="titleCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-    <div class="game-title" style="margin-bottom:4px;">MAR VIVO</div>
-    <div class="game-subtitle">Simulador de Pesca Sustentable</div>
-    <br>
-    <button class="menu-btn" onclick="askPlayerCode()">NUEVA PARTIDA</button>
-    <button class="menu-btn save-btn" onclick="openSaveLoad('load')">CARGAR PARTIDA</button>
-    <button class="menu-btn" onclick="showHelp()">COMO JUGAR</button>
-    <br>
-    <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:#5dade250;text-align:center;z-index:1;margin-top:6px;">Un proyecto educativo sobre recursos pesqueros</div>
+    <div class="title-menu">
+      <button class="menu-btn title-btn new" onclick="askPlayerCode()" aria-label="Nueva partida"><span>NUEVA PARTIDA</span></button>
+      <button class="menu-btn title-btn continue save-btn" onclick="openSaveLoad('load')" aria-label="Continuar"><span>CONTINUAR</span></button>
+      <button class="menu-btn title-btn logbook" onclick="openLogbook()" aria-label="Registro de peces"><span>REGISTRO DE PECES</span></button>
+      <button class="menu-btn title-btn options" onclick="openOptions()" aria-label="Opciones"><span>OPCIONES</span></button>
+      <button class="menu-btn title-btn credits" onclick="openCredits()" aria-label="Créditos"><span>CRÉDITOS</span></button>
+    </div>
   </div>
 
   <div class="screen hidden" id="player-code-screen" style="background:rgba(5,12,22,.97);">
@@ -4212,6 +4212,26 @@ function logMsg(t,tp=''){
 }
 function openModal(t,c){document.getElementById('modal-title').textContent=t;document.getElementById('modal-content').innerHTML=c;document.getElementById('modal-overlay').classList.remove('hidden');}
 function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');}
+function openOptions(){
+  openModal('OPCIONES', `
+    <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--sand);line-height:1.6;">
+      <p><strong>Controles:</strong> Usa los botones de pantalla para navegar, pescar y gestionar recursos.</p>
+      <p><strong>Guardar:</strong> En el menú principal puedes continuar o cargar tu partida desde una ranura.</p>
+      <p><strong>Estado:</strong> Controla energía, hambre, sed y salud del océano para avanzar.</p>
+      <p><strong>Consejo:</strong> Explora zonas diferentes y registra nuevas especies en la bitácora.</p>
+    </div>
+  `);
+}
+function openCredits(){
+  openModal('CRÉDITOS', `
+    <div style="font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:var(--sand);line-height:1.6;">
+      <p>Simulación educativa de pesca sustentable.</p>
+      <p>Arte pixel y UI basados en recursos gráficos existentes.</p>
+      <p>Interfaz adaptada para que el sprite Menu.png sea funcional.</p>
+      <p>Gracias por jugar y cuidar el océano.</p>
+    </div>
+  `);
+}
 function showHelp(){document.getElementById('help-screen').classList.remove('hidden');}
 function hideHelp(){document.getElementById('help-screen').classList.add('hidden');}
 
