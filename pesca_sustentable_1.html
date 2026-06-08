@@ -59,6 +59,29 @@
     color:var(--white);
   }
   *{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated;}
+  button{
+    font-family:var(--font-pixel);
+    font-size:clamp(6px,1.1vw,9px);
+    background:rgba(13,34,64,.88);
+    border:2px solid var(--ui-border);
+    color:var(--white);
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,color .15s ease,transform .1s ease,box-shadow .15s ease;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+  }
+  button:hover,button:active{
+    background:rgba(26,74,107,.95);
+    border-color:var(--wave);
+    color:var(--white);
+  }
+  button:focus{outline:none;box-shadow:0 0 0 3px rgba(93,173,226,.18);}
 
   /* portrait supported */
 
@@ -88,7 +111,16 @@
     -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
   }
-  .menu-btn:hover,.menu-btn:active{background:var(--wave);color:var(--ocean-deep);transform:translate(-2px,-2px);box-shadow:3px 3px 0 #0a3a5c;}
+  .menu-btn{
+    padding:10px 18px;
+    min-width:160px;
+    border-radius:10px;
+    border-color:var(--wave);
+    color:var(--wave);
+    background:rgba(8,18,35,.9);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .menu-btn:hover,.menu-btn:active{background:var(--wave);color:var(--ocean-deep);transform:translate(-2px,-2px);box-shadow:3px 3px 0 rgba(10,58,92,.7);}
   .menu-btn.save-btn{border-color:var(--gold);color:var(--gold);}
   .menu-btn.save-btn:hover,.menu-btn.save-btn:active{background:var(--gold);color:var(--ocean-deep);}
 
@@ -172,17 +204,20 @@
     font-family:var(--font-pixel);
     font-size:clamp(4px,1.1vw,7.5px);
     padding:6px 9px;
-    background:var(--ocean-mid);border:2px solid var(--ui-border);
+    background:rgba(13,34,64,.95);
+    border:2px solid rgba(41,128,185,.9);
     color:var(--white);cursor:pointer;pointer-events:all;
-    transition:background .1s,border-color .1s;
+    transition:background .15s ease,border-color .15s ease,transform .1s ease,box-shadow .15s ease;
     line-height:1.4;text-align:center;
     white-space:nowrap;flex-shrink:0;
     -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
     min-height:32px;
     display:flex;align-items:center;justify-content:center;
+    border-radius:8px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
   }
-  .action-btn:active,.action-btn:hover{background:var(--ocean-surf);border-color:var(--wave);}
+  .action-btn:active,.action-btn:hover{background:rgba(26,74,107,.96);border-color:var(--wave);}
   .action-btn.fishing{border-color:var(--gold);color:var(--gold);animation:fishingPulse 1s ease-in-out infinite;}
   @keyframes fishingPulse{0%,100%{box-shadow:0 0 4px var(--gold);}50%{box-shadow:0 0 14px var(--gold);}}
   .action-btn.save-action{border-color:var(--gold);color:var(--gold);}
@@ -250,8 +285,8 @@
   .shop-item{display:flex;justify-content:space-between;align-items:center;background:var(--ocean-mid);border:2px solid var(--ocean-surf);padding:6px 9px;margin-bottom:4px;gap:6px;}
   .shop-item-name{font-family:var(--font-vt);font-size:clamp(11px,1.8vw,15px);color:var(--sand);}
   .shop-item-price{color:var(--gold);font-size:clamp(5px,1vw,8px);white-space:nowrap;}
-  .shop-buy-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.8vw,7px);background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;padding:4px 8px;touch-action:manipulation;}
-  .shop-buy-btn:active,.shop-buy-btn:hover{background:var(--green);}
+  .shop-buy-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.8vw,7px);background:rgba(13,34,64,.95);border:2px solid var(--green);color:#fff;cursor:pointer;padding:4px 8px;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);touch-action:manipulation;}
+  .shop-buy-btn:active,.shop-buy-btn:hover{background:var(--green);color:var(--ocean-deep);}
 
   /* ── FISH SELECTION MODAL ── */
   #fish-select-overlay{position:absolute;inset:0;background:rgba(5,12,24,.92);z-index:210;display:none;align-items:center;justify-content:center;pointer-events:auto;}
@@ -277,8 +312,8 @@
   .fish-option-name{font-family:var(--font-pixel);font-size:clamp(5px,1vw,8px);color:var(--wave);margin-bottom:2px;}
   .fish-option-details{font-family:var(--font-vt);font-size:clamp(10px,1.5vw,13px);color:var(--sand);}
   .fish-option-value{font-size:clamp(4px,.8vw,6px);color:var(--gold);white-space:nowrap;}
-  .fish-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
-  .fish-select-btn:hover{background:var(--green);}
+  .fish-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:rgba(13,34,64,.95);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
+  .fish-select-btn:hover{background:var(--green);color:var(--ocean-deep);}
   .fish-select-close{position:absolute;top:8px;right:10px;font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);background:transparent;border:2px solid var(--red);color:var(--red);cursor:pointer;padding:4px 10px;}
   .fish-select-close:hover{background:var(--red);color:#fff;}
 
@@ -303,8 +338,8 @@
   .method-stat{display:flex;justify-content:space-between;align-items:center;}
   .method-stat-label{color:var(--gold);font-size:clamp(7px,.9vw,10px);}
   .method-stat-value{color:var(--wave);font-weight:bold;}
-  .method-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
-  .method-select-btn:hover{background:var(--green);}
+  .method-select-btn{font-family:var(--font-pixel);font-size:clamp(6px,1.1vw,9px);padding:10px 20px;background:rgba(13,34,64,.95);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
+  .method-select-btn:hover{background:var(--green);color:var(--ocean-deep);}
   .method-select-close{position:absolute;top:8px;right:10px;font-family:var(--font-pixel);font-size:clamp(5px,.85vw,7px);background:transparent;border:2px solid var(--red);color:var(--red);cursor:pointer;padding:4px 10px;}
   .method-select-close:hover{background:var(--red);color:#fff;}
 
@@ -342,7 +377,7 @@
   .save-slot-info{font-family:var(--font-vt);font-size:clamp(11px,1.8vw,15px);color:var(--sand);}
   .save-slot-info b{color:var(--wave);}
   .slot-btns{display:flex;gap:4px;flex-wrap:wrap;}
-  .slot-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.9vw,7px);padding:5px 8px;cursor:pointer;border:2px solid;background:transparent;touch-action:manipulation;}
+  .slot-btn{font-family:var(--font-pixel);font-size:clamp(4.5px,.9vw,7px);padding:5px 8px;cursor:pointer;border:2px solid var(--ui-border);background:rgba(13,34,64,.7);color:var(--white);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);touch-action:manipulation;}
   .slot-btn.load{border-color:var(--wave);color:var(--wave);}
   .slot-btn.load:active,.slot-btn.load:hover{background:var(--wave);color:var(--ocean-deep);}
   .slot-btn.save-s{border-color:var(--gold);color:var(--gold);}
@@ -377,8 +412,8 @@
   .zone-map-title{font-family:var(--font-pixel);font-size:clamp(8px,1.4vw,12px);color:var(--wave);margin-bottom:8px;}
   #zm-desc{font-family:var(--font-vt);font-size:clamp(13px,1.9vw,16px);color:var(--sand);line-height:1.5;margin-bottom:10px;}
   .zone-species-chip{display:inline-block;font-family:var(--font-vt);font-size:clamp(12px,1.7vw,15px);color:var(--wave);background:var(--ocean-mid);border:1px solid var(--ocean-surf);padding:2px 8px;margin:2px;}
-  .zone-enter-btn{font-family:var(--font-pixel);font-size:clamp(6px,1vw,9px);padding:10px 20px;background:var(--green-dark);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;}
-  .zone-enter-btn:hover{background:var(--green);}
+  .zone-enter-btn{font-family:var(--font-pixel);font-size:clamp(6px,1vw,9px);padding:10px 20px;background:rgba(13,34,64,.95);border:2px solid var(--green);color:#fff;cursor:pointer;margin-top:10px;display:block;width:100%;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
+  .zone-enter-btn:hover{background:var(--green);color:var(--ocean-deep);}
 
   /* ── TARGET SPECIES SELECTION ── */
   #zm-target-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--ui-border);}
@@ -418,11 +453,11 @@
   .deal-name{font-family:var(--font-vt);font-size:clamp(14px,2vw,18px);color:#d0c890;}
   .deal-desc{font-family:var(--font-vt);font-size:clamp(11px,1.6vw,14px);color:#808870;margin-top:2px;}
   .deal-price{font-family:var(--font-pixel);font-size:clamp(5px,0.85vw,7px);color:var(--gold);}
-  .deal-btn{font-family:var(--font-pixel);font-size:clamp(5px,0.8vw,7px);padding:6px 12px;cursor:pointer;border:2px solid;background:transparent;}
+  .deal-btn{font-family:var(--font-pixel);font-size:clamp(5px,0.8vw,7px);padding:6px 12px;cursor:pointer;border:2px solid var(--ui-border);background:rgba(13,34,64,.88);color:var(--white);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
   .deal-btn.buy{border-color:var(--green);color:var(--green);}
-  .deal-btn.buy:hover{background:var(--green);color:#000;}
+  .deal-btn.buy:hover{background:var(--green);color:var(--ocean-deep);}
   .deal-btn.sell{border-color:var(--wave);color:var(--wave);}
-  .deal-btn.sell:hover{background:var(--wave);color:#000;}
+  .deal-btn.sell:hover{background:var(--wave);color:var(--ocean-deep);}
   .rumor-entry{font-family:var(--font-vt);font-size:clamp(13px,1.9vw,16px);color:#a0a878;padding:8px 12px;border-left:3px solid #604820;margin-bottom:6px;background:#0a100a;}
   .cantina-close-btn{position:absolute;top:10px;right:14px;font-family:var(--font-pixel);font-size:clamp(5px,0.85vw,7px);background:transparent;border:2px solid #804020;color:#c06030;cursor:pointer;padding:5px 10px;}
   .cantina-close-btn:hover{background:#804020;color:#fff;}
