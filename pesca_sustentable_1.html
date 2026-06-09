@@ -1707,6 +1707,18 @@ function shade(hex,amt){
 function drawFish(cx,cy,sp,sc,faceR){
   sc=(sc||1)*PS; const f=faceR?1:-1;
   ctx.save(); ctx.translate(Math.round(cx),Math.round(cy)); ctx.scale(f,1);
+
+  const fishSprite = getFishSprite(sp);
+  if(fishSprite && fishSprite.complete && fishSprite.naturalWidth){
+    const iw = fishSprite.naturalWidth;
+    const ih = fishSprite.naturalHeight;
+    const targetW = getFishSpriteWidth(sp) * sc;
+    const targetH = Math.round(targetW * ih / iw);
+    ctx.drawImage(fishSprite, -targetW/2, -targetH/2, targetW, targetH);
+    ctx.restore();
+    return;
+  }
+
   if(sp.crab){
     // Detailed crab
     px(-8*sc,-3*sc,16*sc,8*sc,sp.color);
@@ -1801,16 +1813,6 @@ function drawFish(cx,cy,sp,sc,faceR){
     // Ink sac (faint)
     px(-2*sc,-2*sc,4*sc,4*sc,shade(sp.color,-30));
   } else {
-    const fishSprite = getFishSprite(sp);
-    if(fishSprite && fishSprite.complete && fishSprite.naturalWidth){
-      const iw = fishSprite.naturalWidth;
-      const ih = fishSprite.naturalHeight;
-      const targetW = getFishSpriteWidth(sp) * sc;
-      const targetH = Math.round(targetW * ih / iw);
-      ctx.drawImage(fishSprite, -targetW/2, -targetH/2, targetW, targetH);
-      ctx.restore();
-      return;
-    }
     if(sp.name==='Atun' || sp.name==='Atún'){
       if(TUNA_IMG.complete && TUNA_IMG.naturalWidth){
         const iw = TUNA_IMG.naturalWidth;
