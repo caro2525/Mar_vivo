@@ -2633,14 +2633,43 @@ function drawLighthouse(x,GY,W,H,BU){
     px(x0+Math.round(w*.5-2),top2-lrH-BU-2,4,4,'#f0f0e0');
   }
 
-  if(G.hour>19||G.hour<6){
-    const ang=wt*.6, cx2=x0+w*.5, cy2=top + Math.round(h * 0.1);
-    ctx.save(); ctx.globalAlpha=.08; ctx.fillStyle='#ffffd0';
-    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang)*200,cy2+Math.sin(ang)*70); ctx.lineTo(cx2+Math.cos(ang+.4)*200,cy2+Math.sin(ang+.4)*70); ctx.closePath(); ctx.fill();
-    ctx.globalAlpha=.07; ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+Math.cos(ang+Math.PI)*200,cy2+Math.sin(ang+Math.PI)*70); ctx.lineTo(cx2+Math.cos(ang+Math.PI+.4)*200,cy2+Math.sin(ang+Math.PI+.4)*70); ctx.closePath(); ctx.fill();
+  const isNight = G.hour >= 20 || G.hour < 6;
+  if(isNight){
+    const ang = wt * 0.6;
+    const cx2 = x0 + w * 0.5;
+    const cy2 = top + Math.round(h * 0.1);
+    const beamLen = Math.max(180, W * 0.35);
+
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#fff7b8';
+    ctx.beginPath();
+    ctx.moveTo(cx2, cy2);
+    ctx.lineTo(cx2 + Math.cos(ang) * beamLen, cy2 + Math.sin(ang) * 95);
+    ctx.lineTo(cx2 + Math.cos(ang + 0.35) * beamLen, cy2 + Math.sin(ang + 0.35) * 95);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.08;
+    ctx.beginPath();
+    ctx.moveTo(cx2, cy2);
+    ctx.lineTo(cx2 + Math.cos(ang + Math.PI) * beamLen, cy2 + Math.sin(ang + Math.PI) * 95);
+    ctx.lineTo(cx2 + Math.cos(ang + Math.PI + 0.35) * beamLen, cy2 + Math.sin(ang + Math.PI + 0.35) * 95);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
-    ctx.save(); ctx.globalAlpha=.95; ctx.fillStyle='#ffffc0'; ctx.beginPath(); ctx.arc(cx2,cy2,6,0,Math.PI*2); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.globalAlpha=.25; ctx.fillStyle='#ffffc0'; ctx.beginPath(); ctx.arc(cx2,cy2,14,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = '#fff5aa';
+    ctx.beginPath(); ctx.arc(cx2, cy2, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#fff7b8';
+    ctx.beginPath(); ctx.arc(cx2, cy2, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
 }
 
