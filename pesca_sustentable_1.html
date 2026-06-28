@@ -2937,7 +2937,7 @@ function drawVillager(x,y,type,faceR,scale=1,variant=0){
   if(!faceR){
     ctx.translate(Math.round(x), Math.round(y));
     ctx.scale(-1, 1);
-    ctx.drawImage(img, Math.round(dw/2), -dh, dw, dh);
+    ctx.drawImage(img, -dw/2, -dh, dw, dh);
   } else {
     ctx.drawImage(img, dx, dy, dw, dh);
   }
