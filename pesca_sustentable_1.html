@@ -1623,7 +1623,8 @@ function updateVillager(v,W,H){
   }
   const sway = Math.sin(wt * (v.activity === 'resting' ? 1.8 : 2.6) + v.activityOffset) * (v.activity === 'resting' ? 1 : 2);
   vy += sway;
-  const faceR = v.dir > 0;
+  // Invert facing because the villager sprites are drawn facing left by default.
+  const faceR = v.dir < 0;
   const stepShift = Math.sin(wt * 3 + v.activityOffset) * (v.activity === 'resting' ? 0.5 : 1.2);
 
   return {vy, faceR, stepShift};
