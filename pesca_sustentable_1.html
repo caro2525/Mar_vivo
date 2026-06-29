@@ -1501,15 +1501,15 @@ const MAIN_BOAT_SCALE = 0.32;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
-  {xR:.12,yR:.780,type:'fisherman',dir:1, speed:.22, variant:0, activity:'fishing',   minXR:0.08, maxXR:0.46},
-  {xR:.18,yR:.792,type:'scientist',dir:-1,speed:.20, variant:1, activity:'observing', minXR:0.08, maxXR:0.46},
-  {xR:.24,yR:.765,type:'elder',    dir:1, speed:.18, variant:2, activity:'repairing',  minXR:0.08, maxXR:0.46},
-  {xR:.30,yR:.790,type:'boy',      dir:-1,speed:.24, variant:3, activity:'carrying',   minXR:0.08, maxXR:0.46},
-  {xR:.36,yR:.772,type:'fisherman',dir:1, speed:.21, variant:4, activity:'selling',    minXR:0.08, maxXR:0.46},
-  {xR:.14,yR:.820,type:'scientist',dir:1, speed:.19, variant:5, activity:'testing',    minXR:0.08, maxXR:0.46},
-  {xR:.20,yR:.805,type:'elder',    dir:-1,speed:.17, variant:6, activity:'talking',    minXR:0.08, maxXR:0.46},
-  {xR:.26,yR:.782,type:'boy',      dir:1, speed:.23, variant:7, activity:'gathering',  minXR:0.08, maxXR:0.46},
-  {xR:.32,yR:.768,type:'fisherman',dir:-1,speed:.20, variant:8, activity:'cleaning',   minXR:0.08, maxXR:0.46},
+  {xR:.12,yR:.780,type:'fisherman',dir:1, speed:.22, variant:0, activity:'fishing',   minXR:0.08, maxXR:0.46, crossPath:false},
+  {xR:.18,yR:.792,type:'scientist',dir:-1,speed:.20, variant:1, activity:'observing', minXR:0.08, maxXR:0.46, crossPath:false},
+  {xR:.24,yR:.765,type:'elder',    dir:1, speed:.18, variant:2, activity:'repairing',  minXR:0.08, maxXR:0.46, crossPath:true},
+  {xR:.30,yR:.790,type:'boy',      dir:-1,speed:.24, variant:3, activity:'carrying',   minXR:0.08, maxXR:0.46, crossPath:true},
+  {xR:.36,yR:.772,type:'fisherman',dir:1, speed:.21, variant:4, activity:'selling',    minXR:0.08, maxXR:0.46, crossPath:true},
+  {xR:.14,yR:.820,type:'scientist',dir:1, speed:.19, variant:5, activity:'testing',    minXR:0.08, maxXR:0.46, crossPath:false},
+  {xR:.20,yR:.805,type:'elder',    dir:-1,speed:.17, variant:6, activity:'talking',    minXR:0.08, maxXR:0.46, crossPath:false},
+  {xR:.26,yR:.782,type:'boy',      dir:1, speed:.23, variant:7, activity:'gathering',  minXR:0.08, maxXR:0.46, crossPath:true},
+  {xR:.32,yR:.768,type:'fisherman',dir:-1,speed:.20, variant:8, activity:'cleaning',   minXR:0.08, maxXR:0.46, crossPath:true},
 ];
 
 const VILLAGER_STYLE_MAP={
@@ -1611,8 +1611,18 @@ function updateVillager(v,W,H){
   else if(v.px < rangeMin){ v.dir = 1; }
 
   const baseY = H * v.yR;
+  const BU = Math.max(1, Math.round(Math.min(W,H) / 38));
+  let vy = baseY;
+  if(v.crossPath){
+    const pathStart = W * 0.28;
+    const pathEnd = W * 0.46;
+    const pathRange = pathEnd - pathStart;
+    const pathProgress = Math.min(1, Math.max(0, (v.px - pathStart) / pathRange));
+    const pathCurve = Math.sin(pathProgress * Math.PI);
+    vy = H * 0.70 + BU * 0.4 + pathCurve * BU * 0.45;
+  }
   const sway = Math.sin(wt * (v.activity === 'resting' ? 1.8 : 2.6) + v.activityOffset) * (v.activity === 'resting' ? 1 : 2);
-  const vy = baseY + sway;
+  vy += sway;
   const faceR = v.dir > 0;
   const stepShift = Math.sin(wt * 3 + v.activityOffset) * (v.activity === 'resting' ? 0.5 : 1.2);
 
