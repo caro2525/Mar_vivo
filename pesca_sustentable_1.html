@@ -1469,15 +1469,7 @@ function getFishSpriteWidth(sp){
 
 function initBirds(){
   seaBirds=[];
-  // Pelicans – slow, big, glide low over water
-  for(let i=0;i<3;i++) seaBirds.push({
-    type:'pelican', x:Math.random()*canvas.width*.6,
-    y:canvas.height*(.38+Math.random()*.08),
-    dir:Math.random()>.5?1:-1, speed:0.5+Math.random()*.4,
-    bob:Math.random()*Math.PI*2, bobSpeed:0.6, wingPhase:Math.random()*Math.PI*2,
-    wingSpeed:0.04, size:10+Math.random()*4, soaring:Math.random()>0.4
-  });
-  // Seagulls – all use the Seagull (2).png sprite
+  // Only create birds that use the Seagull (2).png sprite.
   for(let i=0;i<6;i++) seaBirds.push({
     type:'gull', x:Math.random()*canvas.width*.8,
     y:canvas.height*(.30+Math.random()*.14),
@@ -1486,16 +1478,8 @@ function initBirds(){
     wingPhase:Math.random()*Math.PI*2, wingSpeed:0.16+Math.random()*.06,
     size:5+Math.random()*3, soaring:Math.random()>0.7, veer:Math.random()*Math.PI*2
   });
-  // Sandpipers – tiny, run along beach
-  for(let i=0;i<4;i++) seaBirds.push({
-    type:'sandpiper', x:Math.random()*canvas.width*.5,
-    y:0, // y set dynamically to GY
-    dir:Math.random()>.5?1:-1, speed:0.4+Math.random()*.5,
-    bob:Math.random()*Math.PI*2, bobSpeed:3, wingPhase:0, wingSpeed:0,
-    size:4+Math.random()*2, soaring:false, runPhase:Math.random()*Math.PI*2
-  });
 }
-const MAIN_BOAT_SCALE = 0.40;
+const MAIN_BOAT_SCALE = 0.56;
 let PS=1; // pixel scale - adapts to screen
 
 const VILLAGERS_DEF=[
