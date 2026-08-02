@@ -3099,39 +3099,55 @@ function renderLoop(){
     ctx.fillStyle=`rgba(255,255,255,${.25+.6*(b-1)})`; ctx.fillRect(sx,sy,b,b);
   }
 
-  // Sun / Moon: follow smooth arcs as the in-game time advances.
+  // Sun / Moon: follow a continuous orbital arc so both sprites glide smoothly
+  // as the in-game day and night cycle progresses.
   const celestialCenterX=H>W?W*.55:W*.72;
   const celestialSpan=H>W?W*.42:W*.56;
-  let sunX=celestialCenterX;
-  let sunY=H*.24;
-  if(hr>=6&&hr<20&&!G.storm){
-    const dayProgress=Math.max(0,Math.min(1,(hr-6)/14));
-    const dayAngle=Math.PI*(dayProgress-.5);
-    sunX=celestialCenterX+Math.sin(dayAngle)*celestialSpan;
-    sunY=H*.28-Math.cos(dayAngle)*H*.18;
-    const sunW = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
-    const sunH = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
+
+  const dayProgress=Math.max(0,Math.min(1,(hr-6)/14));
+  const dayAngle=Math.PI*(dayProgress-.5);
+  const sunX=celestialCenterX+Math.sin(dayAngle)*celestialSpan;
+  const sunY=H*.28-Math.cos(dayAngle)*H*.18;
+
+  const nightHour=hr<6?hr+24:hr;
+  const nightProgress=Math.max(0,Math.min(1,(nightHour-20)/10));
+  const nightAngle=Math.PI*(nightProgress-.5);
+  const moonX=celestialCenterX-Math.sin(nightAngle)*celestialSpan;
+  const moonY=H*.28-Math.cos(nightAngle)*H*.18;
+
+  const sunW=Math.max(80,Math.min(140,100+Math.sin(wt*.04)*10));
+  const sunH=Math.max(80,Math.min(140,100+Math.sin(wt*.04)*10));
+  const moonW=82;
+  const moonH=82;
+
+  const sunriseFade = hr<6 ? Math.max(0,Math.min(1,(hr+24-19.5)/.5)) : hr>=20 ? 0 : 1;
+  const sunsetFade = hr>=20 ? Math.max(0,Math.min(1,(hr-19.5)/.5)) : hr<6 ? 0 : 1;
+  const sunAlpha = !G.storm ? sunriseFade : 0;
+  const moonAlpha = !G.storm ? sunsetFade : 0;
+
+  if(!G.storm){
     if(SUN_IMG.complete && SUN_IMG.naturalWidth>0){
+      ctx.save();
+      ctx.globalAlpha=sunAlpha;
       ctx.drawImage(SUN_IMG, sunX - sunW/2, sunY - sunH/2, sunW, sunH);
+      ctx.restore();
     } else {
       ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#f1c40f';
       ctx.beginPath(); ctx.arc(sunX,sunY,35,0,Math.PI*2); ctx.fill(); ctx.restore();
       ctx.fillStyle='#f1c40f'; ctx.beginPath(); ctx.arc(sunX,sunY,18,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
     }
-  } else if(!G.storm){
-    const nightHour=hr<6?hr+24:hr;
-    const nightProgress=Math.max(0,Math.min(1,(nightHour-20)/10));
-    const nightAngle=Math.PI*(nightProgress-.5);
-    sunX=celestialCenterX-Math.sin(nightAngle)*celestialSpan;
-    sunY=H*.28-Math.cos(nightAngle)*H*.18;
-    const moonW = 82;
-    const moonH = 82;
+
     if(MOON_IMG.complete && MOON_IMG.naturalWidth>0){
-      ctx.drawImage(MOON_IMG, sunX - moonW/2, sunY - moonH/2, moonW, moonH);
+      ctx.save();
+      ctx.globalAlpha=moonAlpha;
+      ctx.drawImage(MOON_IMG, moonX - moonW/2, moonY - moonH/2, moonW, moonH);
+      ctx.restore();
     } else {
-      ctx.fillStyle='#cfd8e3'; ctx.beginPath(); ctx.arc(sunX,sunY,14,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#b0bcc8'; ctx.beginPath(); ctx.arc(sunX+4,sunY-3,6,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.globalAlpha=moonAlpha;
+      ctx.fillStyle='#cfd8e3'; ctx.beginPath(); ctx.arc(moonX,moonY,14,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b0bcc8'; ctx.beginPath(); ctx.arc(moonX+4,moonY-3,6,0,Math.PI*2); ctx.fill();
+      ctx.restore();
     }
   }
 
