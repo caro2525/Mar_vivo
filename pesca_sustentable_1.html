@@ -3120,10 +3120,19 @@ function renderLoop(){
   const moonW=82;
   const moonH=82;
 
-  const sunriseFade = hr<6 ? Math.max(0,Math.min(1,(hr+24-19.5)/.5)) : hr>=20 ? 0 : 1;
-  const sunsetFade = hr>=20 ? Math.max(0,Math.min(1,(hr-19.5)/.5)) : hr<6 ? 0 : 1;
-  const sunAlpha = !G.storm ? sunriseFade : 0;
-  const moonAlpha = !G.storm ? sunsetFade : 0;
+  const sunAlpha = !G.storm ? Math.max(0,Math.min(1,
+    hr>=6&&hr<18 ? 1 :
+    hr>=18&&hr<20 ? 1 - (hr-18)/2 :
+    hr>=20 ? 0 :
+    Math.max(0,Math.min(1,(hr+24-20)/2))
+  )) : 0;
+
+  const moonAlpha = !G.storm ? Math.max(0,Math.min(1,
+    hr>=20 ? Math.min(1,(hr-20)/4) :
+    hr<6 ? Math.min(1,(hr+24-20)/4) :
+    hr>=6&&hr<18 ? 0 :
+    (20-hr)/2
+  )) : 0;
 
   if(!G.storm){
     if(SUN_IMG.complete && SUN_IMG.naturalWidth>0){
@@ -3132,7 +3141,7 @@ function renderLoop(){
       ctx.drawImage(SUN_IMG, sunX - sunW/2, sunY - sunH/2, sunW, sunH);
       ctx.restore();
     } else {
-      ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#f1c40f';
+      ctx.save(); ctx.globalAlpha=.2*sunAlpha; ctx.fillStyle='#f1c40f';
       ctx.beginPath(); ctx.arc(sunX,sunY,35,0,Math.PI*2); ctx.fill(); ctx.restore();
       ctx.fillStyle='#f1c40f'; ctx.beginPath(); ctx.arc(sunX,sunY,18,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
