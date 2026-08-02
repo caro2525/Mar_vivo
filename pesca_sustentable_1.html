@@ -3050,7 +3050,8 @@ function renderLoop(){
   wt+=.016;
   const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
-  const hr=G.hour, isNight=hr<6||hr>=20;
+  // Use fractional game time so celestial sprites move smoothly between ticks.
+  const hr=G.hour+(G.minute/60), isNight=hr<6||hr>=20;
 
   // SKY
   if(G.storm || G.weather==='storm'){
@@ -3098,11 +3099,16 @@ function renderLoop(){
     ctx.fillStyle=`rgba(255,255,255,${.25+.6*(b-1)})`; ctx.fillRect(sx,sy,b,b);
   }
 
-  // Sun / Moon
-  const dp=Math.max(0,Math.min(1,(hr-6)/12));
-  const sunX=(H>W?W*.55:W*.72)+Math.sin(wt*.04)*12;
-  const sunY=H*.24-Math.sin(dp*Math.PI)*H*.13;
+  // Sun / Moon: follow smooth arcs as the in-game time advances.
+  const celestialCenterX=H>W?W*.55:W*.72;
+  const celestialSpan=H>W?W*.42:W*.56;
+  let sunX=celestialCenterX;
+  let sunY=H*.24;
   if(hr>=6&&hr<20&&!G.storm){
+    const dayProgress=Math.max(0,Math.min(1,(hr-6)/14));
+    const dayAngle=Math.PI*(dayProgress-.5);
+    sunX=celestialCenterX+Math.sin(dayAngle)*celestialSpan;
+    sunY=H*.28-Math.cos(dayAngle)*H*.18;
     const sunW = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
     const sunH = Math.max(80, Math.min(140, 100 + Math.sin(wt*.04)*10));
     if(SUN_IMG.complete && SUN_IMG.naturalWidth>0){
@@ -3114,6 +3120,11 @@ function renderLoop(){
       ctx.fillStyle='#fff59d'; ctx.beginPath(); ctx.arc(sunX-5,sunY-5,7,0,Math.PI*2); ctx.fill();
     }
   } else if(!G.storm){
+    const nightHour=hr<6?hr+24:hr;
+    const nightProgress=Math.max(0,Math.min(1,(nightHour-20)/10));
+    const nightAngle=Math.PI*(nightProgress-.5);
+    sunX=celestialCenterX-Math.sin(nightAngle)*celestialSpan;
+    sunY=H*.28-Math.cos(nightAngle)*H*.18;
     const moonW = 82;
     const moonH = 82;
     if(MOON_IMG.complete && MOON_IMG.naturalWidth>0){
