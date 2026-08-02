@@ -3097,13 +3097,11 @@ function renderLoop(){
   }
 
   const sunsetBlend = !G.storm ? Math.max(0, Math.min(1,
-    hr>=18 && hr<20 ? (hr-18)/2 :
-    hr>=20 ? 0 :
+    hr>=17 && hr<20 ? (hr-17)/3 :
     0
   )) : 0;
   const sunriseBlend = !G.storm ? Math.max(0, Math.min(1,
-    hr>=4 && hr<6 ? (hr-4)/2 :
-    hr>=6 ? 0 :
+    hr>=5 && hr<6 ? (hr-5)/1 :
     0
   )) : 0;
 
