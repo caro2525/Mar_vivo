@@ -1336,6 +1336,10 @@ const SUN_IMG = new Image();
 SUN_IMG.src = 'sprite/Sun.png';
 const MOON_IMG = new Image();
 MOON_IMG.src = 'sprite/Moon.png';
+const SUNSET_IMG = new Image();
+SUNSET_IMG.src = 'sprite/Sunset.png';
+const SUNRISE_IMG = new Image();
+SUNRISE_IMG.src = 'sprite/Sunrise.png';
 const SKY_IMG = new Image();
 SKY_IMG.src = 'sprite/Sky.png';
 const NIGHT_IMG = new Image();
@@ -3090,6 +3094,31 @@ function renderLoop(){
       const sg=ctx.createLinearGradient(0,0,0,H*.48); sg.addColorStop(0,skyTop); sg.addColorStop(1,skyBot);
       ctx.fillStyle=sg; ctx.fillRect(0,0,W,H*.48);
     }
+  }
+
+  const sunsetBlend = !G.storm ? Math.max(0, Math.min(1,
+    hr>=18 && hr<20 ? (hr-18)/2 :
+    hr>=20 ? 0 :
+    0
+  )) : 0;
+  const sunriseBlend = !G.storm ? Math.max(0, Math.min(1,
+    hr>=4 && hr<6 ? (hr-4)/2 :
+    hr>=6 ? 0 :
+    0
+  )) : 0;
+
+  if(SUNSET_IMG.complete && SUNSET_IMG.naturalWidth>0 && sunsetBlend > 0){
+    ctx.save();
+    ctx.globalAlpha = sunsetBlend;
+    ctx.drawImage(SUNSET_IMG, 0, 0, W, H*.48);
+    ctx.restore();
+  }
+
+  if(SUNRISE_IMG.complete && SUNRISE_IMG.naturalWidth>0 && sunriseBlend > 0){
+    ctx.save();
+    ctx.globalAlpha = sunriseBlend;
+    ctx.drawImage(SUNRISE_IMG, 0, 0, W, H*.48);
+    ctx.restore();
   }
 
   // Stars
