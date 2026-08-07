@@ -2344,7 +2344,7 @@ function drawHouse(x,GY,w,h,wall,roof,wood,W,BU,label){
   px(x+w-S*3-swW,swY+S,swW-S*2,swH-S*2,'#1a2030');
   px(x+w-S*4-swW,swY+Math.round(swH/2),swW,S,'#5a3820');
   // Window glow at night
-  if(G.hour>19||G.hour<6){
+  if(G.hour>=18||G.hour<6){
     ctx.save();ctx.globalAlpha=0.25;ctx.fillStyle='#ffe090';
     ctx.fillRect(x+S*5,swY+S,swW-S*2,swH-S*2);
     ctx.fillRect(x+w-S*3-swW,swY+S,swW-S*2,swH-S*2);
@@ -2406,7 +2406,7 @@ function drawHouse(x,GY,w,h,wall,roof,wood,W,BU,label){
   // Chimney cap
   px(chX-S,chTop-S*2,chW+S*2,S*3,'#4a2818');
   // Smoke animation
-  if(G.hour<9||G.hour>18){
+  if(G.hour>=18||G.hour<6){
     for(let i=0;i<5;i++){
       const sy=chTop-S*4-i*S*5+Math.sin(wt*0.6+i)*S*3;
       ctx.fillStyle=`rgba(200,195,185,${(0.45-i*0.08)*(0.5+0.5*Math.sin(wt*0.4+i))})`;
@@ -2514,7 +2514,7 @@ function drawCooperativa(x,GY,W,BU){
     px(wx,wy,ww,wh,'#4a3018');
     px(wx+S,wy+S,ww-S*2,wh-S*2,'#1a2030');
     px(wx,wy+Math.round(wh/2),ww,S,'#4a3018');
-    if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh-S*2);ctx.restore();}
+    if(G.hour>=18||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh-S*2);ctx.restore();}
   });
 
   // Large double door
@@ -2558,7 +2558,7 @@ function drawCantina(x,GY,W,BU){
     px(x+col*tw+(row%2)*Math.floor(tw/2),GY-h+row*th*2,tw-1,th,row%2?'#a83820':'#c8482a');
   const chX=x+Math.round(w*.2), chH=Math.round(BU*1.3);
   px(chX,GY-h-chH,Math.round(BU*.6),chH,'#806040'); px(chX-2,GY-h-chH-3,Math.round(BU*.6)+4,4,shade('#806040',-15));
-  if(G.hour>17||G.hour<10){
+  if(G.hour>=6&&G.hour<18){
     for(let i=0;i<4;i++){const sy=GY-h-chH-5-i*9+Math.sin(wt*.6+i)*5;
       ctx.fillStyle=`rgba(160,150,130,${(.5-i*.11)*(.5+.5*Math.sin(wt*.4+i))})`;
       ctx.beginPath();ctx.arc(chX+Math.round(BU*.3)+Math.sin(wt*.3+i)*5,sy,3+i*2.5,0,Math.PI*2);ctx.fill();}
@@ -2627,7 +2627,7 @@ function drawMarket(x,GY,W,BU){
   const chX=x+Math.round(w*0.7), chW=Math.max(S*3,Math.round(BU*0.4));
   const chTop=GY-h-rH+Math.round(rH*0.25);
   px(chX,chTop,chW,GY-h-chTop+S*3,'#6a3828'); px(chX-S,chTop-S*2,chW+S*2,S*3,'#4a2818');
-  if(G.hour<9||G.hour>18){
+  if(G.hour>=18||G.hour<6){
     for(let i=0;i<4;i++){const sy=chTop-S*3-i*S*5+Math.sin(wt*0.6+i)*S*2;
       ctx.fillStyle=`rgba(195,190,180,${(0.4-i*0.08)*(.5+.5*Math.sin(wt*.4+i))})`;
       ctx.beginPath();ctx.arc(chX+chW/2+Math.sin(wt*.3+i)*S*3,sy,S*(2+i*.7),0,Math.PI*2);ctx.fill();}
@@ -2648,7 +2648,7 @@ function drawMarket(x,GY,W,BU){
   [[x+S*4,GY-h+S*3],[x+w-ww-S*4,GY-h+S*3]].forEach(([wx,wy])=>{
     px(wx,wy,ww,wh2,'#4a3018'); px(wx+S,wy+S,ww-S*2,wh2-S*2,'#1a2030');
     px(wx,wy+Math.round(wh2/2),ww,S,'#4a3018');
-    if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh2-S*2);ctx.restore();}
+    if(G.hour>=18||G.hour<6){ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#ffe090';ctx.fillRect(wx+S,wy+S,ww-S*2,wh2-S*2);ctx.restore();}
   });
 
   // Double door
@@ -2732,7 +2732,7 @@ function drawRepairShop(x,GY,W,BU){
   const winX=x+w-ww-S*4, winY=GY-h+S*4;
   px(winX,winY,ww,wh2,'#404828'); px(winX+S,winY+S,ww-S*2,wh2-S*2,'#1a2020');
   px(winX,winY+Math.round(wh2/2),ww,S,'#404828'); px(winX+Math.round(ww/2),winY,S,wh2,'#404828');
-  if(G.hour>19||G.hour<6){ctx.save();ctx.globalAlpha=.2;ctx.fillStyle='#ffe090';ctx.fillRect(winX+S,winY+S,ww-S*2,wh2-S*2);ctx.restore();}
+  if(G.hour>=18||G.hour<6){ctx.save();ctx.globalAlpha=.2;ctx.fillStyle='#ffe090';ctx.fillRect(winX+S,winY+S,ww-S*2,wh2-S*2);ctx.restore();}
 
   // Sign
   px(x+S*2,GY-lh-S*8,w-S*4,S*7,'#282e20');
@@ -2878,7 +2878,7 @@ function drawDock(x,GY,H,W,BU){
   px(lpX,GY-Math.round(BU*3.8),Math.round(BU*.8),3,'#404840');
   px(lpX+Math.round(BU*.8),GY-Math.round(BU*3.8),4,Math.round(BU*.65),'#404840');
   px(lpX+Math.round(BU*.6),GY-Math.round(BU*4.1),Math.round(BU*.7),Math.round(BU*.7),'#707860');
-  if(G.hour>19||G.hour<6){
+  if(G.hour>=18||G.hour<6){
     ctx.save();ctx.globalAlpha=.85;ctx.fillStyle='#ffe090';ctx.fillRect(lpX+Math.round(BU*.66),GY-Math.round(BU*4.05),Math.round(BU*.45),Math.round(BU*.45));ctx.restore();
     ctx.save();ctx.globalAlpha=.14;ctx.fillStyle='#ffe080';ctx.beginPath();ctx.arc(lpX+Math.round(BU*.85),GY-Math.round(BU*3.8),Math.round(BU*2),0,Math.PI*2);ctx.fill();ctx.restore();
   } else {
@@ -3291,7 +3291,7 @@ function renderLoop(){
       }
     }
     // Reflejo de luna de noche
-    if(G.hour>20||G.hour<5){
+    if(G.hour>=18||G.hour<6){
       const moonX=W*.72; const moonY=H*.24;
       ctx.save(); ctx.globalAlpha=0.12;
       const rg=ctx.createLinearGradient(moonX-8,H*.36,moonX+8,H*.55);
