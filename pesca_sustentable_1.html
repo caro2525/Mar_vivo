@@ -2085,7 +2085,7 @@ function drawVillage(W,H){
   }
 
   // Night lamp glow
-  if(G.hour>19||G.hour<6){
+  if(G.hour>=18||G.hour<6){
     for(const lx of lampXs){
       ctx.save(); ctx.globalAlpha=0.08; ctx.fillStyle='#ffe080';
       ctx.beginPath(); ctx.arc(lx+8,GY-50,55,0,Math.PI*2); ctx.fill();
@@ -2185,7 +2185,7 @@ function drawCoral(cx,wl,color){
 }
 
 function drawLamps(lampXs,GY){
-  const night=G.hour>19||G.hour<6;
+  const night=G.hour>=18||G.hour<6;
   for(const lx of lampXs){
     px(lx,GY-48,4,48,'#404840'); px(lx+1,GY-48,2,48,shade('#404840',18));
     px(lx,GY-46,14,3,'#404840'); px(lx+12,GY-46,3,9,'#404840');
@@ -2236,7 +2236,7 @@ function drawStorageArea(bx,GY,BU){
 
 function drawWin(wx,wy,ww,wh){
   ww=ww||16; wh=wh||13;
-  const night=G.hour>19||G.hour<6;
+  const night=G.hour>=18||G.hour<6;
   px(wx,wy,ww,wh,night?'#ffe0a0':'#aed6f1');
   px(wx,wy,ww,1,'#7a9ab0'); px(wx,wy+wh-1,ww,1,'#7a9ab0');
   px(wx,wy,1,wh,'#7a9ab0'); px(wx+ww-1,wy,1,wh,'#7a9ab0');
@@ -2786,7 +2786,7 @@ function drawLighthouse(x,GY,W,H,BU){
     px(x0+Math.round(w*.5-2),top2-lrH-BU-2,4,4,'#f0f0e0');
   }
 
-  const isNight = G.hour >= 20 || G.hour < 6;
+  const isNight = G.hour >= 18 || G.hour < 6;
   if(isNight){
     const ang = wt * 0.6;
     const cx2 = x0 + w * 0.5;
@@ -3055,7 +3055,7 @@ function renderLoop(){
   const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
   // Use fractional game time so celestial sprites move smoothly between ticks.
-  const hr=G.hour+(G.minute/60), isNight=hr<6||hr>=20;
+  const hr=G.hour+(G.minute/60), isNight=hr<6||hr>=18;
 
   // SKY
   if(G.storm || G.weather==='storm'){
@@ -3097,7 +3097,7 @@ function renderLoop(){
   }
 
   const sunsetBlend = !G.storm ? Math.max(0, Math.min(1,
-    hr>=17 && hr<20 ? (hr-17)/3 :
+    hr>=17 && hr<18 ? (hr-17)/1 :
     0
   )) : 0;
   const sunriseBlend = !G.storm ? Math.max(0, Math.min(1,
@@ -3131,13 +3131,13 @@ function renderLoop(){
   const celestialCenterX=H>W?W*.55:W*.72;
   const celestialSpan=H>W?W*.42:W*.56;
 
-  const dayProgress=Math.max(0,Math.min(1,(hr-6)/14));
+  const dayProgress=Math.max(0,Math.min(1,(hr-6)/12));
   const dayAngle=Math.PI*(dayProgress-.5);
   const sunX=celestialCenterX+Math.sin(dayAngle)*celestialSpan;
   const sunY=H*.28-Math.cos(dayAngle)*H*.18;
 
   const nightHour=hr<6?hr+24:hr;
-  const nightProgress=Math.max(0,Math.min(1,(nightHour-20)/10));
+  const nightProgress=Math.max(0,Math.min(1,(nightHour-18)/12));
   const nightAngle=Math.PI*(nightProgress-.5);
   const moonX=celestialCenterX-Math.sin(nightAngle)*celestialSpan;
   const moonY=H*.28-Math.cos(nightAngle)*H*.18;
@@ -3149,16 +3149,15 @@ function renderLoop(){
 
   const sunAlpha = !G.storm ? Math.max(0,Math.min(1,
     hr>=6&&hr<18 ? 1 :
-    hr>=18&&hr<20 ? 1 - (hr-18)/2 :
-    hr>=20 ? 0 :
-    Math.max(0,Math.min(1,(hr+24-20)/2))
+    hr>=18 ? 0 :
+    Math.max(0,Math.min(1,(hr+24-18)/12))
   )) : 0;
 
   const moonAlpha = !G.storm ? Math.max(0,Math.min(1,
-    hr>=20 ? Math.min(1,(hr-20)/4) :
-    hr<6 ? Math.min(1,(hr+24-20)/4) :
+    hr>=18 ? Math.min(1,(hr-18)/12) :
+    hr<6 ? Math.min(1,(hr+24-18)/12) :
     hr>=6&&hr<18 ? 0 :
-    (20-hr)/2
+    (18-hr)/12
   )) : 0;
 
   if(!G.storm){
@@ -4174,7 +4173,7 @@ function openCantina(){
      }},
   ];
 
-  const night=G.hour>20||G.hour<7;
+  const night=G.hour>=18||G.hour<6;
   const ambiance=night
     ? '<div style="color:#a090c0;font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);margin-bottom:12px;">La cantina esta llena de pescadores. El acordeon suena en el rincon.</div>'
     : '<div style="color:#c0a060;font-family:var(--font-vt);font-size:clamp(12px,1.8vw,15px);margin-bottom:12px;">Pocos clientes a esta hora. La cocinera te ofrece algo de tomar.</div>';
@@ -4408,7 +4407,7 @@ function updateHUD(){
 }
 
 function updateBodyBackground(){
-  const isDay = G.hour>=6 && G.hour<20;
+  const isDay = G.hour>=6 && G.hour<18;
   if(isDay){
     document.body.style.backgroundImage = "url('Day.png')";
     document.body.style.backgroundPosition = 'center center';
